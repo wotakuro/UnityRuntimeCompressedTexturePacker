@@ -45,25 +45,25 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// コンストラクタ
         /// sRGBで、生成アルゴリズムはMaximalRectを利用したパッキングを行います
         /// </summary>
-        /// <param name="textureFormat">テクスチャフォーマット</param>
         /// <param name="width">幅</param>
         /// <param name="height">高さ</param>
-        public CompressedTexturePacker(TextureFormat textureFormat,int width, int height)
+        /// <param name="textureFormat">テクスチャフォーマット</param>
+        public CompressedTexturePacker(int width, int height, TextureFormat textureFormat)
         {
-            Initialize(textureFormat, width, height, false,
+            Initialize( width, height, textureFormat, false,
                 new UTJ.RuntimeCompressedTexturePacker.Packing.MaximalRectanglesPacking());
         }
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="format">パッキングされるTextureのフォーマット</param>
         /// <param name="width">Packing Textureの幅</param>
         /// <param name="height">Packing Textureの幅</param>
+        /// <param name="textureFormat">パッキングされるTextureのフォーマット</param>
         /// <param name="resolveAlgorithm">生成に利用するアルゴリズム</param>
-        public CompressedTexturePacker(TextureFormat format,int width , int height, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm)
+        public CompressedTexturePacker(int width , int height, TextureFormat textureFormat, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm)
         {
-            Initialize(format,width,height,isLinearColor,resolveAlgorithm);
+            Initialize(width,height, textureFormat, isLinearColor,resolveAlgorithm);
         }
 
         /// <summary>
@@ -167,12 +167,12 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <summary>
         /// 初期化処理
         /// </summary>
-        /// <param name="format">パッキングされるTextureのフォーマット</param>
         /// <param name="width">Packing Textureの幅</param>
         /// <param name="height">Packing Textureの幅</param>
+        /// <param name="format">パッキングされるTextureのフォーマット</param>
         /// <param name="isLinearColor">リニアカラー</param>
         /// <param name="resolveAlgorithm">生成に利用するアルゴリズム</param>
-        private void Initialize(TextureFormat format, int width, int height, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm)
+        private void Initialize( int width, int height, TextureFormat format, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm)
         {
             this.textureFormat = format;
             this.textureWidth = width;
