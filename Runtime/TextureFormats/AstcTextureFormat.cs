@@ -1,4 +1,5 @@
 using System.Collections;
+using NUnit.Framework.Interfaces;
 using Unity.Collections;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
     /// <summary>
     /// Arm社より提供されているastc-encoder (astcenc) が書き出すASTCテクスチャツール
     /// </summary>
-    public struct AstcTextureFormat
+    public struct AstcTextureFormat: ITextureFormatFile
     {
         // ASTCのブロックの幅
         public byte block_x;
@@ -24,31 +25,78 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         public uint dim_z;
 
         /// <summary>
+        /// テクスチャファイルの幅
+        /// </summary>
+        public int width => (int)dim_x;
+
+        /// <summary>
+        /// Textureファイルの高さ
+        /// </summary>
+        public int height => (int)dim_y;
+
+        /// <summary>
+        /// テクスチャフォーマット
+        /// </summary>
+        public TextureFormat textureFormat
+        {
+            get
+            {
+                TextureFormat format;
+                GetTextureFormat(out format);
+                return format;
+            }        
+        }
+
+        /// <summary>
+        /// データが正しいかを返します。
+        /// </summary>
+        public bool IsValid
+        {
+            get
+            {
+                TextureFormat format;
+                return GetTextureFormat(out format);
+            }
+        }
+        
+
+        /// <summary>
         /// ASTC形式のHeaderのロード
         /// </summary>
-        /// <param name="bytes">.astcファイルの内容</param>
+        /// <param name="fileBinary">.astcファイルの内容</param>
         /// <returns>ファイルでロードできたかの可否</returns>
-        public bool LoadHeader(NativeArray<byte> bytes)
+        public bool LoadHeader(NativeArray<byte> fileBinary)
         {
             // 先頭4Byte
-            if ( !bytes.IsCreated || bytes.Length < 16 || 
-                bytes[0] != 0x13 || bytes[1] != 0xAB || bytes[2] != 0xA1 || bytes[3] != 0x5C)
+            if ( !fileBinary.IsCreated || fileBinary.Length < 16 || 
+                fileBinary[0] != 0x13 || fileBinary[1] != 0xAB || fileBinary[2] != 0xA1 || fileBinary[3] != 0x5C)
             {
                 this.block_x = this.block_y = this.block_z = 0;
                 this.dim_x = this.dim_y = this.dim_z = 0;
                 return false;
             }
             // ASTCブロックサイズ
-            this.block_x = bytes[4];
-            this.block_y = bytes[5];
-            this.block_z = bytes[6];
+            this.block_x = fileBinary[4];
+            this.block_y = fileBinary[5];
+            this.block_z = fileBinary[6];
 
             // 画像サイズ 
-            this.dim_x = (uint)(bytes[7] + (bytes[8] << 8) + (bytes[9] << 16));
-            this.dim_y = (uint)(bytes[10] + (bytes[11] << 8) + (bytes[12] << 16));
-            this.dim_z = (uint)(bytes[13] + (bytes[14] << 8) + (bytes[15] << 16));
+            this.dim_x = (uint)(fileBinary[7] + (fileBinary[8] << 8) + (fileBinary[9] << 16));
+            this.dim_y = (uint)(fileBinary[10] + (fileBinary[11] << 8) + (fileBinary[12] << 16));
+            this.dim_z = (uint)(fileBinary[13] + (fileBinary[14] << 8) + (fileBinary[15] << 16));
 
             return true;
+        }
+
+        /// <summary>
+        /// ファイル全体を渡して、画像の実データ部分だけを切り抜いて返します。
+        /// </summary>
+        /// <param name="fileBinary">ファイル全体のバイナリデータ</param>
+        /// <returns>実データ部分</returns>
+
+        public NativeArray<byte> GeImageData(NativeArray<byte> fileBinary)
+        {
+            return fileBinary.GetSubArray(16, fileBinary.Length - 16);
         }
 
         /// <summary>
@@ -56,12 +104,19 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
-        public Texture2D LoadTexture(NativeArray<byte> bytes, bool isLinearColor = false)
+        public Texture2D LoadTexture(NativeArray<byte> fileBinary, bool isLinearColor = false, bool useMipmap= false)
         {
-            this.LoadHeader(bytes);
+            if( this.LoadHeader(fileBinary))
+            {
+                return null;
+            }
+            if(!this.IsValid)
+            {
+                return null;
+            }
             var tex = CreateFromHeader(isLinearColor);
             if(tex != null) {
-                var rawData = bytes.GetSubArray(16, bytes.Length - 16);
+                var rawData = this.GeImageData(fileBinary);
                 tex.LoadRawTextureData( rawData);
                 tex.Apply();
             }
@@ -74,7 +129,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         /// </summary>
         /// <param name="format">UnityのTextureFormatを返します</param>
         /// <returns>対応するフォーマットがない場合 falseを返します</returns>
-        public bool GetTextureFormat(out TextureFormat format)
+        private bool GetTextureFormat(out TextureFormat format)
         {
             if (this.block_x != this.block_y)
             {
@@ -117,5 +172,6 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             var texture = new Texture2D( (int)dim_x, (int)dim_y, format,false, isLinearColor);
             return texture;
         }
+
     }
 }

@@ -11,7 +11,7 @@ if not exist "astc_converted" (
 set ASTCENC_EXE=astcenc.exe
 
 :: ブロックサイズ (例: 4x4, 6x6, 8x8 など)
-set BLOCK_SIZE=6x6
+set BLOCK_SIZE=4x4
 
 :: 圧縮設定 (fast, medium, thorough, exhaustive)
 set QUALITY=-exhaustive
