@@ -36,7 +36,32 @@ public Texture2D LoadAstcTexture()
     return null;
 }
 ```
-### astc texture load and packing async
+### astc texture load and packing 
+```
+public void AsyncLoadStart()
+{
+    this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, TextureFormat.ASTC_4x4);
+    string[] loadFilesInStreamingAssets = {
+        System.IO.Path.Combine(Application.streamingAssetsPath, "test1.astc"),
+        System.IO.Path.Combine(Application.streamingAssetsPath, "test2.astc"),
+    };
+    this.StartCoroutine(autoAtlasBuilder.LoadAndPackAsyncCoroutine(loadFiles, this.OnCompleteLoadAndPack, OnFailedLoadFile));
+}
 
+private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites)
+{
+    var texture = autoAtlasBuilder.texture;
+    foreach (var sprite in sprites)
+    {
+       // something to do for generated sprite
+    }
+    // if you don't need to append textures. reelase buffers.
+    this.autoAtlasBuilder.ReleaseBuffers();
+}
 
-### astc texture load and packing sync
+private void OnFailedLoadFile(string file, int width, int height)
+{
+    Debug.LogError("Failed LoadFile " + file + "::" + width + "x" + height);
+}
+```
+
