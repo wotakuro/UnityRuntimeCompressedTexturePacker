@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 namespace UTJ.Sample
 {
-    [FilePath("UserSettings/RCTP_StreamingAssetsProcess.asset", FilePathAttribute.Location.PreferencesFolder)]
+    [FilePath("UserSettings/RCTP_StreamingAssetsProcess.asset", FilePathAttribute.Location.ProjectFolder)]
     public class ImportSampleStreamingAssets : ScriptableSingleton<ImportSampleStreamingAssets>
     {
         public bool isImportPackage = false;
