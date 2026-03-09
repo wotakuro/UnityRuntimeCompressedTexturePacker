@@ -8,7 +8,7 @@
     "samples": [
         {
             "displayName": "Common StreamingAssets Importing",
-            "description": "Before running each sample, please install this first and create the files in StreamingAssets.",
+            "description": "Before running each sample, please install this first and create the files in StreamingAssets.\nOr you can install Samples~/RCTP_StreamingAssetsData.unitypackage manually.",
             "path": "Samples~/Common"
         },
         {
