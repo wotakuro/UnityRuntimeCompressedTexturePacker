@@ -23,7 +23,7 @@ echo Encording ASTC....
 for /r %%f in (*.png) do (
     echo Encording : %%f
     
-    "%ASTCENC_EXE%" -cl "%%f" "astc_converted\\%%~nf_%BLOCK_SIZE%.astc" %BLOCK_SIZE% %QUALITY%
+    "%ASTCENC_EXE%" -cs "%%f" "astc_converted\\%%~nf_%BLOCK_SIZE%.astc" %BLOCK_SIZE% %QUALITY% -yflip
     
     if !errorlevel! equ 0 (
         echo Complete: %%~nf.astc

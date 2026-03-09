@@ -40,6 +40,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// FileRead用のBuffer
         private NativeArray<byte> fileReadBuffer;
 
+        /// <summary>
+        /// AtlasTexture
+        /// </summary>
         public Texture2D texture
         {
             get
@@ -109,7 +112,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
             foreach (var file in files)
             {
-                long fileSize = GetFileSize(file);
+                long fileSize = UnsafeFileReadUtility.GetFileSize(file);
                 if (!fileReadBuffer.IsCreated)
                 {
                     fileReadBuffer = new NativeArray<byte>((int)fileSize, Allocator.Persistent);
@@ -121,7 +124,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
 
 
-                var readHandle = RequestLoad(file, fileReadBuffer, fileSize);
+                var readHandle = UnsafeFileReadUtility.RequestLoad(file, fileReadBuffer, fileSize);
                 while (!readHandle.JobHandle.IsCompleted)
                 {
                     yield return null;
@@ -161,30 +164,12 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 onComplete(generatedSpritesBuffer);
             }
-            fileReadBuffer.Dispose();
-        }
-        /// ファイルサイズの取得
-        private static unsafe long GetFileSize(string filename)
-        {
-            FileInfoResult result;
-            var info = AsyncReadManager.GetFileInfo(filename, &result);
-            // Asyncの処理を即時で終了させます
-            info.JobHandle.Complete();
-            return result.FileSize;
+            if (fileReadBuffer.IsCreated)
+            {
+                fileReadBuffer.Dispose();
+            }
         }
 
-        /// ロードのリクエスト処理
-        private static unsafe ReadHandle RequestLoad(string file, NativeArray<byte> buffer, long fileSize)
-        {
-            ReadCommand readCommand = new ReadCommand()
-            {
-                Buffer = buffer.GetUnsafePtr(),
-                Offset = 0,
-                Size = fileSize
-            };
-            var handle = AsyncReadManager.Read(file, &readCommand, 1);
-            return handle;
-        }
 
     }
 }

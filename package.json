@@ -3,5 +3,23 @@
     "displayName": "Runtime Compressed Texture Packer",
     "description": "Unity runtime utility that dynamically packs compressed textures  to atlases to optimize VRAM and draw calls.(currently .astc only support)",
     "version": "0.1.0",
-    "unity": "6000.0"
+    "unity": "6000.0",
+
+    "samples": [
+        {
+            "displayName": "Common StreamingAssets Importing",
+            "description": "Before running each sample, please install this first and create the files in StreamingAssets.",
+            "path": "Samples~/Common"
+        },
+        {
+            "displayName": "01_SingleTextureLoad",
+            "description": "This is a sample that directly loads the astc files located under StreamingAssets.",
+            "path": "Samples~/01_SingleTextureLoad"
+        },
+        {
+            "displayName": "02_AutoAtlasGenerate",
+            "description": "This is a sample that automatically creates Atlas Textures and Sprites by loading multiple ASTC files placed under the StreamingAssets folder.",
+            "path": "Samples~/02_AutoAtlasGenerate"
+        }
+    ]
 }

@@ -106,7 +106,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         /// <returns></returns>
         public Texture2D LoadTexture(NativeArray<byte> fileBinary, bool isLinearColor = false, bool useMipmap= false)
         {
-            if( this.LoadHeader(fileBinary))
+            if( !this.LoadHeader(fileBinary))
             {
                 return null;
             }
