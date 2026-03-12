@@ -41,13 +41,14 @@ public Texture2D LoadAstcTexture()
 public void AsyncLoadStart()
 {
     this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, TextureFormat.ASTC_4x4);
-    string[] loadFilesInStreamingAssets = {
+    string[] loadFiles = {
         System.IO.Path.Combine(Application.streamingAssetsPath, "test1.astc"),
         System.IO.Path.Combine(Application.streamingAssetsPath, "test2.astc"),
     };
     this.StartCoroutine(autoAtlasBuilder.LoadAndPackAsyncCoroutine(loadFiles, this.OnCompleteLoadAndPack, OnFailedLoadFile));
 }
 
+// callback when the loading and packing process is completed
 private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites)
 {
     var texture = autoAtlasBuilder.texture;
@@ -59,6 +60,8 @@ private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites)
     this.autoAtlasBuilder.ReleaseBuffers();
 }
 
+// callback when the load failed or packing failed
+// if loading file is failed the width and height will be negative value.
 private void OnFailedLoadFile(string file, int width, int height)
 {
     Debug.LogError("Failed LoadFile " + file + "::" + width + "x" + height);

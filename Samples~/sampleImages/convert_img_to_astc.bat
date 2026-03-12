@@ -17,7 +17,7 @@ set BLOCK_SIZE=4x4
 set QUALITY=-exhaustive
 :: ----------------
 
-echo Encording ASTC....
+echo Encoding ASTC....
 
 :: 現在のフォルダ内の .png ファイルをループ処理
 for /r %%f in (*.png) do (
