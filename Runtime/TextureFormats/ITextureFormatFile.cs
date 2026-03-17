@@ -36,6 +36,13 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
 
 
         /// <summary>
+        /// ファイル形式のチェックを行います
+        /// </summary>
+        /// <param name="fileBinary">ファイルの中身</param>
+        /// <returns>先頭数Byteを読み込んで、対象のフォーマットであるかを確認します</returns>
+        public bool SignatureValid(NativeArray<byte> fileBinary);
+
+        /// <summary>
         /// Headerのロード
         /// </summary>
         /// <param name="fileBinary">ファイルの中身</param>

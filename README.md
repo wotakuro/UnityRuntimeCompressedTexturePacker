@@ -16,6 +16,9 @@ https://github.com/ARM-software/astc-encoder
 ```
 astcenc -cs input.png output.astc 4x4 -exhaustive -yflip
 ```
+### KTX Texture file
+https://github.com/KhronosGroup/KTX-Software
+
 
 ## How to use
 

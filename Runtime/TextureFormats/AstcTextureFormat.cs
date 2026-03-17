@@ -7,6 +7,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
     /// <summary>
     /// Arm社より提供されているastc-encoder (astcenc) が書き出すASTCテクスチャツール
+    /// https://github.com/ARM-software/astc-encoder
     /// </summary>
     public struct AstcTextureFormat: ITextureFormatFile
     {
@@ -58,7 +59,25 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
                 return GetTextureFormat(out format);
             }
         }
-        
+
+
+        /// <summary>
+        /// ファイル形式のチェックを行います
+        /// </summary>
+        /// <param name="fileBinary">ファイルの中身</param>
+        /// <returns>先頭数Byteを読み込んで、対象のフォーマットであるかを確認します</returns>
+        public bool SignatureValid(NativeArray<byte> fileBinary)
+        {
+            // 先頭4Byte
+            if (!fileBinary.IsCreated || fileBinary.Length < 16 ||
+                fileBinary[0] != 0x13 || fileBinary[1] != 0xAB || fileBinary[2] != 0xA1 || fileBinary[3] != 0x5C)
+            {
+                this.block_x = this.block_y = this.block_z = 0;
+                this.dim_x = this.dim_y = this.dim_z = 0;
+                return false;
+            }
+            return true;
+        }
 
         /// <summary>
         /// ASTC形式のHeaderのロード
@@ -68,8 +87,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         public bool LoadHeader(NativeArray<byte> fileBinary)
         {
             // 先頭4Byte
-            if ( !fileBinary.IsCreated || fileBinary.Length < 16 || 
-                fileBinary[0] != 0x13 || fileBinary[1] != 0xAB || fileBinary[2] != 0xA1 || fileBinary[3] != 0x5C)
+            if ( !SignatureValid(fileBinary) )
             {
                 this.block_x = this.block_y = this.block_z = 0;
                 this.dim_x = this.dim_y = this.dim_z = 0;
@@ -81,9 +99,9 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             this.block_z = fileBinary[6];
 
             // 画像サイズ 
-            this.dim_x = (uint)(fileBinary[7] + (fileBinary[8] << 8) + (fileBinary[9] << 16));
-            this.dim_y = (uint)(fileBinary[10] + (fileBinary[11] << 8) + (fileBinary[12] << 16));
-            this.dim_z = (uint)(fileBinary[13] + (fileBinary[14] << 8) + (fileBinary[15] << 16));
+            this.dim_x = BytesToOtherTypesUtility.ReadData3BytesForAstc(fileBinary,7);
+            this.dim_y = BytesToOtherTypesUtility.ReadData3BytesForAstc(fileBinary, 10);
+            this.dim_z = BytesToOtherTypesUtility.ReadData3BytesForAstc(fileBinary, 13);
 
             return true;
         }
@@ -164,12 +182,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         // Texture作成
         private Texture2D CreateFromHeader(bool isLinearColor )
         {
-            TextureFormat format;
-            if(!GetTextureFormat(out format))
-            {
-                return null;
-            }
-            var texture = new Texture2D( (int)dim_x, (int)dim_y, format,false, isLinearColor);
+            var texture = new Texture2D( (int)width, (int)height, this.textureFormat,false, isLinearColor);
             return texture;
         }
 

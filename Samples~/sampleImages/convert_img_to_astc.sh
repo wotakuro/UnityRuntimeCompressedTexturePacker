@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# 出力フォルダの作成 (存在しない場合は作成)
-mkdir -p "astc_converted"
+
 
 # --- 設定項目 ---
 # astcenc へのパス（パスが通っていない場合はフルパスを記載してください）
@@ -14,9 +13,10 @@ BLOCK_SIZE="4x4"
 # 圧縮設定 (fast, medium, thorough, exhaustive)
 QUALITY="-exhaustive"
 # ----------------
+# 出力フォルダの作成 (存在しない場合は作成)
+mkdir -p "astc_converted"
 
-# ※スペルミスと思われる「Encording」を「Encoding」に修正しています
-echo "Encoding ASTC...."
+echo "Encoding ...."
 
 # サブディレクトリも含めて .png ファイルを検索してループ処理
 # パスにスペースが含まれている場合も安全に処理できるよう print0 を使用しています
