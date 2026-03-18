@@ -16,9 +16,12 @@ https://github.com/ARM-software/astc-encoder
 ```
 astcenc -cs input.png output.astc 4x4 -exhaustive -yflip
 ```
-### KTX Texture file
-https://github.com/KhronosGroup/KTX-Software
+### KTX version1 Texture file( ETC2 - ASTC )
+https://developer.imaginationtech.com/solutions/pvrtextool/
 
+```
+PVRTexToolCLI -i test.png -o test.ktx -flip y -f ETC2_RGB_A1,UBN,sRGB -ics sRGB
+```
 
 ## How to use
 
