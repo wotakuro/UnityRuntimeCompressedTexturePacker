@@ -1,6 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
+cd /d %~dp0
 
 :: --- 設定項目 ---
 :: 出力ディレクトリ

@@ -4,19 +4,15 @@ cd /d %~dp0
 
 :: --- 設定項目 ---
 :: 出力ディレクトリ
-set OUTPUT_DIR=ktx_converted
+set OUTPUT_DIR=dds_converted
 
 :: astcenc.exe へのパス（パスが通っていない場合はフルパスを記載してください）
-set PVRTexToolCLI_EXE=PVRTexToolCLI.exe
+set TEXCONV_EXE=Texconv.exe
 
 :: Encode format
-:: ASTC_4X4, ETC2_RGB, ETC2_RGBA, ETC2_RGB_A1
-set ENCODE_FORMAT=ETC2_RGBA
+:: BC1_UNORM , BC3_UNORM , BC7_UNORM
+set ENCODE_FORMAT=BC1_UNORM
 
-:: Encode quality
-:: etcfast, etcnormal, etcslow,
-:: astcthorough,astcexhaustive,
-set ENCODE_QUALITY=etcslow
 
 
 :: ----------------
@@ -34,10 +30,11 @@ echo Encoding ....
 for /r %%f in (*.png) do (
     echo Encording : %%f
     
-    "%PVRTexToolCLI_EXE%" -i "%%f" -o "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf_%ENCODE_FORMAT%.ktx" -f %ENCODE_FORMAT%,UBN,sRGB -flip y -ics sRGB
+    "%TEXCONV_EXE%" -f %ENCODE_FORMAT% "%%f" -o "%OUTPUT_DIR%\\%ENCODE_FORMAT%" -nogpu -y -srgbi -srgbo
+    move /Y "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf.dds" "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf_%ENCODE_FORMAT%.dds"
     
     if !errorlevel! equ 0 (
-        echo Complete: %%~nf.astc
+        echo Complete: %%~nf.dds
     ) else (
         echo [Error] %%f 
     )
