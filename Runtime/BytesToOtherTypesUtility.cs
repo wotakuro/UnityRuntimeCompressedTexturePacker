@@ -69,5 +69,18 @@ namespace UTJ.RuntimeCompressedTexturePacker
             byte* ptr = (byte*)&value;
             return *ptr == 1;
         }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe bool Is4ByteAlign(void* ptr)
+        {
+            return (((nuint)ptr & 3) == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe bool Is8ByteAlign(void* ptr)
+        {
+            return (((nuint)ptr & 7) == 0);
+        }
     }
 }

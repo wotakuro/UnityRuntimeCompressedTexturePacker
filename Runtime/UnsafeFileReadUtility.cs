@@ -3,6 +3,7 @@ using Unity.IO.LowLevel.Unsafe;
 using Unity.Collections.LowLevel.Unsafe;
 
 using UnityEngine;
+using System;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -67,5 +68,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
             handle.JobHandle.Complete();
             return fileBinary;
         }
+
     }
 }

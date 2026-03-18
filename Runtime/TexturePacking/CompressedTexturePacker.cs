@@ -4,6 +4,7 @@ using UnityEngine;
 using Unity.Collections.LowLevel.Unsafe;
 using System;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
+using System.Runtime.CompilerServices;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -20,6 +21,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private int textureWidth;
         private int textureHeight;
 
+
         // texture実データのバッファー
         private NativeArray<byte> textureLowData;
         // 作成されたRect
@@ -27,9 +29,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
         // 空きスペース矩形の解決をするアルゴリズム
         private IRectResolveAlgorithm rectResolveAlgorithm;
 
-        // astc BlockX,BlockY
+        // Compressed Texture BlockX,BlockY and size/Block
         private int blockX;
         private int blockY;
+        private int blockByteSize;
 
         /// <summary>
         /// マージンをいれるピクセル
@@ -147,18 +150,40 @@ namespace UTJ.RuntimeCompressedTexturePacker
         {
             switch (format)
             {
+                // ASTC block,
                 case TextureFormat.ASTC_4x4:
-                    return GetAstcDataSize(4, 4, width, height);
+                    return GetTextureDataSize(4, 4, 16, width, height);
                 case TextureFormat.ASTC_5x5:
-                    return GetAstcDataSize(5, 5, width, height);
+                    return GetTextureDataSize(5, 5, 16, width, height);
                 case TextureFormat.ASTC_6x6:
-                    return GetAstcDataSize(6, 6, width, height);
+                    return GetTextureDataSize(6, 6, 16, width, height);
                 case TextureFormat.ASTC_8x8:
-                    return GetAstcDataSize(8, 8, width, height);
+                    return GetTextureDataSize(8, 8, 16, width, height);
                 case TextureFormat.ASTC_10x10:
-                    return GetAstcDataSize(10, 10, width, height);
+                    return GetTextureDataSize(10, 10, 16, width, height);
                 case TextureFormat.ASTC_12x12:
-                    return GetAstcDataSize(12, 12, width, height);
+                    return GetTextureDataSize(12, 12, 16, width, height);
+                // WIP
+#if false
+                // DXT1 4x4 64Bit (8Byte)
+                case TextureFormat.DXT1:
+                    return GetTextureDataSize(4, 4, 8, width, height);
+                // DXT5 4x4 128Bit (16Byte)
+                case TextureFormat.DXT5:
+                    return GetTextureDataSize(4, 4, 16, width, height);
+                // BC7 4x4 128Bit (16Byte)
+                case TextureFormat.BC7:
+                    return GetTextureDataSize(4, 4, 16, width, height);
+                // ETC2 RGB 4x4 64bit (8Byte)
+                case TextureFormat.ETC2_RGB:
+                    return GetTextureDataSize(4, 4, 8, width, height);
+                // ETC2 RGBA 4x4 128Bit (16Byte)
+                case TextureFormat.ETC2_RGBA8:
+                    return GetTextureDataSize(4, 4, 16, width, height);
+                // ETC2 RGBA1 4x4 64Bit(8Byte)
+                case TextureFormat.ETC2_RGBA1:
+                    return GetTextureDataSize(4, 4, 8, width, height);
+#endif
             }
             return 0;
         }
@@ -182,21 +207,27 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 case TextureFormat.ASTC_4x4:
                     this.blockX = this.blockY = 4;
+                    this.blockByteSize = 16;
                     break;
                 case TextureFormat.ASTC_5x5:
                     this.blockX = this.blockY = 5;
+                    this.blockByteSize = 16;
                     break;
                 case TextureFormat.ASTC_6x6:
                     this.blockX = this.blockY = 6;
+                    this.blockByteSize = 16;
                     break;
                 case TextureFormat.ASTC_8x8:
                     this.blockX = this.blockY = 8;
+                    this.blockByteSize = 16;
                     break;
                 case TextureFormat.ASTC_10x10:
                     this.blockX = this.blockY = 10;
+                    this.blockByteSize = 16;
                     break;
                 case TextureFormat.ASTC_12x12:
                     this.blockX = this.blockY = 12;
+                    this.blockByteSize = 16;
                     break;
             }
             this.rectResolveAlgorithm = resolveAlgorithm;
@@ -248,26 +279,180 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
             unsafe
             {
-                ulong* dstPtr = (ulong*)this.textureLowData.GetUnsafePtr();
-                ulong* srcPtr = (ulong*)srcTexLowData.GetUnsafePtr();
-                int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart) * 2);
+                void* dstPtr = this.textureLowData.GetUnsafePtr();
+                void* srcPtr = srcTexLowData.GetUnsafePtr();
 
-                dstPtr += dstOffset;
-
-                for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+                if (this.blockByteSize == 16)
                 {
-                    for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                    if (BytesToOtherTypesUtility.Is8ByteAlign(srcPtr))
                     {
-                        // write 128bit
-                        *dstPtr = *srcPtr;
-                        ++dstPtr; ++srcPtr;
-                        *dstPtr = *srcPtr;
-                        ++dstPtr; ++srcPtr;
+                        Write16ByteBlock8ByteAlign(dstPtr, srcPtr,
+                            allBlockXNum, writeBlockXStart, writeBlockYStart,
+                            writeBlockXNum, writeBlockYNum);
                     }
-                    dstPtr += ( (allBlockXNum - writeBlockXNum) * 2);
+                    else if (BytesToOtherTypesUtility.Is4ByteAlign(srcPtr))
+                    {
+                        Write16ByteBlock4ByteAlign(dstPtr, srcPtr,
+                                allBlockXNum, writeBlockXStart, writeBlockYStart,
+                                writeBlockXNum, writeBlockYNum);
+                    }else
+                    {
+                        WriteBlockSlow(dstPtr, srcPtr, this.blockByteSize,
+                                allBlockXNum, writeBlockXStart, writeBlockYStart,
+                                writeBlockXNum, writeBlockYNum);
+                    }
+                }else if(this.blockByteSize == 8)
+                {
+                    if (BytesToOtherTypesUtility.Is8ByteAlign(srcPtr))
+                    {
+                        Write8ByteBlock8ByteAlign(dstPtr, srcPtr,
+                            allBlockXNum, writeBlockXStart, writeBlockYStart,
+                            writeBlockXNum, writeBlockYNum);
+                    }
+                    else if (BytesToOtherTypesUtility.Is4ByteAlign(srcPtr))
+                    {
+                        Write8ByteBlock4ByteAlign(dstPtr, srcPtr,
+                                allBlockXNum, writeBlockXStart, writeBlockYStart,
+                                writeBlockXNum, writeBlockYNum);
+                    }
+                    else
+                    {
+                        WriteBlockSlow(dstPtr, srcPtr, this.blockByteSize,
+                                allBlockXNum, writeBlockXStart, writeBlockYStart,
+                                writeBlockXNum, writeBlockYNum);
+                    }
+
                 }
             }
         }
+        #region DATACOPY
+        // 16Byteブロック、かつ8Byteアラインの状況で書き込みます
+        private static unsafe void Write16ByteBlock8ByteAlign(void* dst,void *src,int allBlockXNum,
+            int writeBlockXStart,int writeBlockYStart,
+            int writeBlockXNum,int writeBlockYNum)
+        {
+            ulong* dstPtr = (ulong*)dst;
+            ulong* srcPtr = (ulong*)src;
+            int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart) * 2);
+
+            dstPtr += dstOffset;
+
+            for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+            {
+                for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                {
+                    // write 128bit
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                }
+                dstPtr += ((allBlockXNum - writeBlockXNum) * 2);
+            }
+        }
+
+        // 16Byteブロック、かつ4Byteアラインの状況で書き込みます
+        private static unsafe void Write16ByteBlock4ByteAlign(void* dst, void* src, int allBlockXNum,
+            int writeBlockXStart, int writeBlockYStart,
+            int writeBlockXNum, int writeBlockYNum)
+        {
+            uint* dstPtr = (uint*)dst;
+            uint* srcPtr = (uint*)src;
+            int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart) * 4);
+
+            dstPtr += dstOffset;
+
+            for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+            {
+                for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                {
+                    // write 128bit
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                }
+                dstPtr += ((allBlockXNum - writeBlockXNum) * 4);
+            }
+        }
+
+        // 8Byteブロック、かつ8Byteアラインの状況で書き込みます
+        private static unsafe void Write8ByteBlock8ByteAlign(void* dst, void* src, int allBlockXNum,
+            int writeBlockXStart, int writeBlockYStart,
+            int writeBlockXNum, int writeBlockYNum)
+        {
+            ulong* dstPtr = (ulong*)dst;
+            ulong* srcPtr = (ulong*)src;
+            int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart));
+
+            dstPtr += dstOffset;
+
+            for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+            {
+                for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                {
+                    // write 64Bit
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                }
+                dstPtr += ((allBlockXNum - writeBlockXNum));
+            }
+        }
+        // 8Byteブロック、かつ5Byteアラインの状況で書き込みます
+        private static unsafe void Write8ByteBlock4ByteAlign(void* dst, void* src, int allBlockXNum,
+            int writeBlockXStart, int writeBlockYStart,
+            int writeBlockXNum, int writeBlockYNum)
+        {
+            uint* dstPtr = (uint*)dst;
+            uint* srcPtr = (uint*)src;
+            int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart) * 2);
+
+            dstPtr += dstOffset;
+
+            for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+            {
+                for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                {
+                    // write 64Bit
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                    *dstPtr = *srcPtr;
+                    ++dstPtr; ++srcPtr;
+                }
+                dstPtr += ((allBlockXNum - writeBlockXNum)*2);
+            }
+        }
+
+
+        private static unsafe void WriteBlockSlow(void* dst, void* src, int blockSize, int allBlockXNum,
+            int writeBlockXStart, int writeBlockYStart,
+            int writeBlockXNum, int writeBlockYNum)
+        {
+            byte* dstPtr = (byte*)dst;
+            byte* srcPtr = (byte*)src;
+            int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart) * blockSize);
+
+            dstPtr += dstOffset;
+
+            for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+            {
+                for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                {
+                    // write 128bit
+                    for (int i = 0; i < blockSize; ++i)
+                    {
+                        *dstPtr = *srcPtr;
+                        ++dstPtr; ++srcPtr;
+                    }
+                }
+                dstPtr += ((allBlockXNum - writeBlockXNum) * blockSize);
+            }
+        }
+        #endregion DATACOPY
 
 
         // Textureの幅とサイズ、データ自体の長さを元にValidationを行います
@@ -278,11 +463,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
         }
 
         // ASTCのブロックサイズ、Textureのサイズを受け取り、テクスチャ自体のデータサイズを返します
-        private static int GetAstcDataSize(int block_x, int block_y, int width, int height)
+        private static int GetTextureDataSize(int block_x, int block_y, int blockByte, int width, int height)
         {
             int blockXnum = (width + block_x - 1) / block_x;
             int blockYnum = (height + block_y - 1) / block_y;
-            return blockXnum * blockYnum * 16;
+            return blockXnum * blockYnum * blockByte;
         }
 
         // 全てのPixelをASTCでクリアします
