@@ -25,8 +25,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         // texture実データのバッファー
         private NativeArray<byte> textureLowData;
-        // 作成されたRect
-        private Dictionary<string , RectInt> rects = new Dictionary<string, RectInt>();
         // 空きスペース矩形の解決をするアルゴリズム
         private IRectResolveAlgorithm rectResolveAlgorithm;
 
@@ -73,12 +71,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="name"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <param name="srcTextureLowData"></param>
         /// <returns></returns>
-        public Rect AppendTextureData(string name, int width, int height, NativeArray<byte> srcTextureLowData)
+        public Rect AppendTextureData(int width, int height, NativeArray<byte> srcTextureLowData)
         {
             this.InitLowTextureDataBufferIfNeeded();
             RectInt rectInt = new RectInt();
@@ -101,7 +98,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
             // オリジナルの値に戻します
             rectInt.width = width;
             rectInt.height = height;
-            this.rects.Add(name, rectInt);
             return ConvertRectF(rectInt);
         }
 
@@ -222,7 +218,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
 
         // 必要ならば、TextureのLowDataを確保し、アルファ０で塗りつぶします
-        private void InitLowTextureDataBufferIfNeeded()
+        private unsafe void InitLowTextureDataBufferIfNeeded()
         {
             if (!this.textureLowData.IsCreated)
             {
@@ -234,9 +230,27 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     case TextureFormat.ASTC_8x8:
                     case TextureFormat.ASTC_10x10:
                     case TextureFormat.ASTC_12x12:
-                        this.AstcAlphaClearBuffer();
+                        this.AllClearBufferFor16ByteBlock(SetupAstcCleardata);
                         break;
-                }        
+                    case TextureFormat.DXT5:
+                        this.AllClearBufferFor16ByteBlock(SetupBC3UNormClearData);
+                        break;
+                    case TextureFormat.BC7:
+                        this.AllClearBufferFor16ByteBlock(SetupBC7UNormClearData);
+                        break;
+                    case TextureFormat.ETC2_RGBA8:
+                        this.AllClearBufferFor16ByteBlock(SetupEtc2RGBA8ClearData);
+                        break;
+                    case TextureFormat.DXT1:
+                        this.AllClearBufferFor8ByteBlock(SetupBC1UNormClearData);
+                        break;
+                    case TextureFormat.ETC2_RGBA1:
+                        this.AllClearBufferFor8ByteBlock(SetupEtc2RGBA1ClearData);
+                        break;
+                    case TextureFormat.ETC2_RGB:
+                        this.AllClearBufferFor8ByteBlock(SetupEtc2RGBClearData);
+                        break;
+                }
             }
         }
 
@@ -445,9 +459,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return (expectedLength == length);
         }
 
+        private unsafe delegate void SetupClearData(byte* ptr);
 
-        // 全てのPixelをASTCでクリアします
-        private void AstcAlphaClearBuffer()
+        // 16Byte形式のブロック単位で全てのブロックをクリアします
+        private void AllClearBufferFor16ByteBlock(SetupClearData setupClearDataFunc)
         {
             if (!textureLowData.IsCreated)
             {
@@ -456,7 +471,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             unsafe
             {
                 ulong* clearData = stackalloc ulong[2];
-                SetCleardata((byte*)clearData);
+                setupClearDataFunc((byte*)clearData);
                 ulong* dest = (ulong*) textureLowData.GetUnsafePtr();
                 int length = textureLowData.Length / 16;
                 for (int i=0;i<length; i++)
@@ -467,9 +482,28 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
             }
         }
-
+        // 8Byte形式のブロック単位で全てのブロックをクリアします
+        private void AllClearBufferFor8ByteBlock(SetupClearData setupClearDataFunc)
+        {
+            if (!textureLowData.IsCreated)
+            {
+                return;
+            }
+            unsafe
+            {
+                ulong* clearData = stackalloc ulong[2];
+                setupClearDataFunc((byte*)clearData);
+                ulong* dest = (ulong*)textureLowData.GetUnsafePtr();
+                int length = textureLowData.Length / 8;
+                for (int i = 0; i < length; i++)
+                {
+                    *dest = *clearData;
+                    ++dest ;
+                }
+            }
+        }
         // クリアになるような ASTCブロックのデータを作成
-        private unsafe void SetCleardata(byte* setupData)
+        private unsafe void SetupAstcCleardata(byte* setupData)
         {
             setupData[0] = 0xFC;
             setupData[1] = 0xFD;
@@ -479,6 +513,80 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             setupData[14] = 0x00;
             setupData[15] = 0x00;
+        }
+
+
+        private unsafe void SetupEtc2RGBClearData(byte* setupData)
+        {
+            // 8byte
+            for (int i = 0; i < 8; ++i)
+            {
+                setupData[i] = 0x00;
+            }
+            setupData[3] = 0x02;
+            setupData[4] = 0xFF;
+            setupData[5] = 0xFF;
+        }
+        private unsafe void SetupEtc2RGBA1ClearData(byte* setupData)
+        {
+            // 8byte
+            for (int i = 0; i < 8; ++i)
+            {
+                setupData[i] = 0x00;
+            }
+            setupData[4] = 0xFF;
+            setupData[5] = 0xFF;
+        }
+
+        private unsafe void SetupEtc2RGBA8ClearData(byte* setupData)
+        {
+            // 16byte
+            for(int i = 0; i < 16; ++i)
+            {
+                setupData[i] = 0x00;
+            }
+            setupData[1] = 0x10;
+            setupData[11] = 0x02;
+        }
+
+        private unsafe void SetupBC1UNormClearData(byte* setupData)
+        {
+            // 8byte
+            for (int i = 0; i < 2; ++i)
+            {
+                setupData[i] = 0x00;
+            }
+            for (int i = 2; i < 8; ++i)
+            {
+                setupData[i] = 0xFF;
+            }
+        }
+
+        private unsafe void SetupBC3UNormClearData(byte* setupData)
+        {
+            // 16byte
+            setupData[0] = 0xFF;
+            setupData[1] = 0x00;
+            setupData[2] = 0x49;
+            setupData[3] = 0x92;
+            setupData[4] = 0x24;
+            setupData[5] = 0x49;
+            setupData[6] = 0x92;
+            setupData[7] = 0x24;
+            for (int i = 8; i < 16; ++i)
+            {
+                setupData[i] = 0x00;
+            }
+        }
+
+        private unsafe void SetupBC7UNormClearData(byte* setupData)
+        {
+            // 16byte
+            setupData[0] = 0x10;
+            for (int i = 1; i < 16; ++i)
+            {
+                setupData[i] = 0x00;
+            }
         }
 
     }

@@ -89,18 +89,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public IEnumerator LoadAndPackAsyncCoroutine(IEnumerable<string> files, LoadingComplete onComplete,
             TexturePackingError onFailedFile)
         {
-            if (this.readFileListBuffer == null)
-            {
-                this.readFileListBuffer = new List<string>();
-            }
-            this.readFileListBuffer.Clear();
-            foreach(var file in files)
-            {
-                this.readFileListBuffer.Add(file);
-            }
-            InitBeforeLoadStart();
+            InitBeforeLoadStart(files);
 
-            foreach (var file in readFileListBuffer)
+            foreach (var file in this.readFileListBuffer)
             {
                 long fileSize = UnsafeFileReadUtility.GetFileSize(file);
                 if (!fileReadBuffer.IsCreated)
@@ -156,11 +147,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public void LoadAndPack(IEnumerable<string> files, LoadingComplete onComplete,
             TexturePackingError onFailedFile)
         {
-            InitBeforeLoadStart();
+            InitBeforeLoadStart(files);
             NativeArray<long> fileSizes = new NativeArray<long>( files.Count(),Allocator.Temp);
             long biggestSize = 0;
             int idx = 0;
-            foreach (var file in files)
+            foreach (var file in this.readFileListBuffer)
             {
                 long fileSize = UnsafeFileReadUtility.GetFileSize(file);
                 if(fileSize > biggestSize)
@@ -173,7 +164,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             using(var buffer = new NativeArray<byte>((int)biggestSize, Allocator.Temp))
             {
                 idx = 0;
-                foreach (var file in files)
+                foreach (var file in this.readFileListBuffer)
                 {
                     UnsafeFileReadUtility.LoadFileSync(file, buffer, fileSizes[idx]);
                     var name = Path.GetFileNameWithoutExtension(file);
@@ -191,7 +182,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <summary>
         /// ロード開始前の初期化処理
         /// </summary>
-        private void InitBeforeLoadStart()
+        private void InitBeforeLoadStart(IEnumerable<string> files)
         {
             if (this.generatedSpritesBuffer == null)
             {
@@ -202,6 +193,19 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 this.generatedSpriteByFile = new Dictionary<string, Sprite>();
             }
+
+            if (this.readFileListBuffer == null)
+            {
+                this.readFileListBuffer = new List<string>();
+            }
+            this.readFileListBuffer.Clear();
+            foreach (var file in files)
+            {
+                if (!this.generatedSpriteByFile.ContainsKey(file))
+                {
+                    this.readFileListBuffer.Add(file);
+                }
+            }
         }
 
         /// <summary>
@@ -210,8 +214,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="file">ファイル名</param>
         /// <param name="fileDataBuffer">ファイルの中身のバッファ</param>
         /// <param name="onFailedFile">失敗時の呼び出し</param>
-        /// <returns>読み込みに成功したかどうかを返します</returns>
-        private bool CreateSprite(string file, NativeArray<byte> fileDataBuffer, TexturePackingError onFailedFile)
+        /// <returns>作成したSpriteを返します</returns>
+        private Sprite CreateSprite(string file, NativeArray<byte> fileDataBuffer, TexturePackingError onFailedFile)
         {
             ITextureFileFormat textureFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileDataBuffer);
             if (!textureFile.LoadHeader(fileDataBuffer))
@@ -220,7 +224,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     onFailedFile(file, -1, -1);
                 }
-                return false;
+                return null;
             }
             // format Check
             if (textureFile.textureFormat != this.compressedTexturePacker.textureFormat)
@@ -229,14 +233,14 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     onFailedFile(file, texture.width, texture.height);
                 }
-                return false;
+                return null;
             }
 
             var name = Path.GetFileNameWithoutExtension(file);
 
             var textureBodyData = textureFile.GeImageDataWithoutMipmap(fileDataBuffer);
             {
-                var rect = compressedTexturePacker.AppendTextureData(name, textureFile.width, textureFile.height, textureBodyData);
+                var rect = compressedTexturePacker.AppendTextureData(textureFile.width, textureFile.height, textureBodyData);
                 if (rect.width <= 0 || rect.height <= 0)
                 {
                     if (onFailedFile != null)
@@ -250,9 +254,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f));
                     sprite.name = name;
                     this.generatedSpritesBuffer.Add(sprite);
+                    this.generatedSpriteByFile.Add(file, sprite);
+                    return sprite;
                 }
             }
-            return true;
+            return null;
         }
     }
 }
