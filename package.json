@@ -17,9 +17,14 @@
             "path": "Samples~/01_SingleTextureLoad"
         },
         {
-            "displayName": "02_AutoAtlasGenerate",
+            "displayName": "02_TextureListInStreamingAssets",
+            "description": "This is a sample that all files list-up under the StreamingAssets folder.",
+            "path": "Samples~/02_TextureListInStreamingAssets"
+        },
+        {
+            "displayName": "03_AutoAtlasGenerate",
             "description": "This is a sample that automatically creates Atlas Textures and Sprites by loading multiple ASTC files placed under the StreamingAssets folder.",
-            "path": "Samples~/02_AutoAtlasGenerate"
+            "path": "Samples~/03_AutoAtlasGenerate"
         }
     ]
 }

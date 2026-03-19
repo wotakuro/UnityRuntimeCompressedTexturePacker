@@ -12,13 +12,14 @@ namespace UTJ.Sample
     /// https://github.com/ARM-software/astc-encoder
     /// astcenc -cs input.png output.astc 4x4 -exhaustive -yflip
     /// </summary>
-    public class AstcSingleTextureLoadSample : MonoBehaviour
+    public class SingleTextureLoadSample : MonoBehaviour
     {
         /// <summary>
         /// StreamingAssets以下のパスを指定
         /// </summary>
         [SerializeField]
         public string file;
+
 
         /// <summary>
         /// 対象のImage
@@ -33,14 +34,25 @@ namespace UTJ.Sample
         {
             string path = System.IO.Path.Combine(Application.streamingAssetsPath, file);
 
-            var astcTexture = new AstcTextureFormat();
             using( var fileBinary = UnsafeFileReadUtility.LoadFileSync(path, Unity.Collections.Allocator.Temp) ){
                 if (fileBinary.IsCreated)
                 {
-                    var texture = astcTexture.LoadTexture(fileBinary);
-
-                    dstImage.texture = texture;
-                    this.AdjustImageSize();
+                    var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary); ;
+                    
+                    var texture = textureFormatFile.LoadTexture(fileBinary);
+                    if (texture)
+                    {
+                        dstImage.texture = texture;
+                        this.AdjustImageSize();
+                    }
+                    else
+                    {
+                        Debug.LogError("Not support file " + file);
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Not Found FIle " + path);
                 }
             }
         }

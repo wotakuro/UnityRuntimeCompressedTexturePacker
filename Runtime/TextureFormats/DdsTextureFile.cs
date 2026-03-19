@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Net;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
 
@@ -139,6 +140,10 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
         public bool LoadHeader(NativeArray<byte> fileBinary)
         {
+            if(fileBinary.Length < 128)
+            {
+                return false;
+            }
             this.dwSize = BytesToOtherTypesUtility.ReadUintFast(fileBinary,4);
             this.dwFlag = BytesToOtherTypesUtility.ReadUintFast(fileBinary, 8);
             this.dwHeight = BytesToOtherTypesUtility.ReadUintFast(fileBinary, 12);        
@@ -198,6 +203,10 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
             if (HasDXT10Extention(this.ddspf_dwFourCC))
             {
+                if (fileBinary.Length < 148)
+                {
+                    return false;
+                }
                 this.dxt10_dxgiFormat = BytesToOtherTypesUtility.ReadUintFast(fileBinary, 128);
                 this.dxt10_resourceDimension = BytesToOtherTypesUtility.ReadUintFast(fileBinary, 132);
                 this.dxt10_miscFlag = BytesToOtherTypesUtility.ReadUintFast(fileBinary, 136);
@@ -233,7 +242,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
         public static bool SignatureValid(NativeArray<byte> fileBinary)
         {
-            if(fileBinary[0] == 0x44 && fileBinary[1] == 0x44 && fileBinary[2] == 0x53 && fileBinary[3] == 0x20)
+            if (!fileBinary.IsCreated || fileBinary.Length < 128 || fileBinary[0] == 0x44 && fileBinary[1] == 0x44 && fileBinary[2] == 0x53 && fileBinary[3] == 0x20)
             {
                 return true;
             }
