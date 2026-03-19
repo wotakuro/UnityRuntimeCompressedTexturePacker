@@ -41,11 +41,11 @@ public Texture2D LoadAstcTexture()
 {
     string path = System.IO.Path.Combine(Application.streamingAssetsPath, "test.astc");
 
-    var astcTexture = new AstcTextureFormat();
     using( var fileBinary = UnsafeFileReadUtility.LoadFileSync(path, Unity.Collections.Allocator.Temp) ){
         if (fileBinary.IsCreated)
         {
-            var texture = astcTexture.LoadTexture(fileBinary);
+            var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+            var texture = textureFormatFile.LoadTexture(fileBinary);
             return texture;
         }
     }
