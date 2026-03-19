@@ -18,7 +18,7 @@ namespace UTJ.Sample
         /// StreamingAssets以下のパスを指定
         /// </summary>
         [SerializeField]
-        public string file;
+        public InputField inputField;
 
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace UTJ.Sample
         /// </summary>
         public void LoadAstcTexture()
         {
-            string path = System.IO.Path.Combine(Application.streamingAssetsPath, file);
+            string path = System.IO.Path.Combine(Application.streamingAssetsPath, inputField.text);
 
             using( var fileBinary = UnsafeFileReadUtility.LoadFileSync(path, Unity.Collections.Allocator.Temp) ){
                 if (fileBinary.IsCreated)
@@ -40,18 +40,19 @@ namespace UTJ.Sample
                     var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary); ;
                     
                     var texture = textureFormatFile.LoadTexture(fileBinary);
+                    dstImage.texture = texture;
                     if (texture)
                     {
-                        dstImage.texture = texture;
                         this.AdjustImageSize();
                     }
                     else
                     {
-                        Debug.LogError("Not support file " + file);
+                        Debug.LogError("Not support file " + inputField.text);
                     }
                 }
                 else
                 {
+                    dstImage.texture = null;
                     Debug.LogError("Not Found FIle " + path);
                 }
             }

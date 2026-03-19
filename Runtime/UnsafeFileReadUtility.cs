@@ -69,5 +69,19 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return fileBinary;
         }
 
+        /// <summary>
+        /// ファイルロード
+        /// </summary>
+        /// <param name="path">パス</param>
+        /// <param name="buffer">読み込んだデータが入るBuffer</param>
+        /// <param name="fileSize">ファイルサイズ</param>
+        /// <returns>読み込んだサイズ</returns>
+        public static long LoadFileSync(string path,NativeArray<byte> buffer, long fileSize)
+        {
+            var handle = RequestLoad(path, buffer, fileSize);
+            handle.JobHandle.Complete();
+            return handle.GetBytesRead();
+        }
+
     }
 }

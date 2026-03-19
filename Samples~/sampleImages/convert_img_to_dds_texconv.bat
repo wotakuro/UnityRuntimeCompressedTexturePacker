@@ -6,7 +6,7 @@ cd /d %~dp0
 :: 出力ディレクトリ
 set OUTPUT_DIR=dds_converted
 
-:: astcenc.exe へのパス（パスが通っていない場合はフルパスを記載してください）
+:: Texconv.exe へのパス（パスが通っていない場合はフルパスを記載してください）
 set TEXCONV_EXE=Texconv.exe
 
 :: Encode format

@@ -112,7 +112,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
         public NativeArray<byte> GeImageDataWithoutMipmap(NativeArray<byte> fileBinary)
         {
-            return fileBinary.GetSubArray(16, fileBinary.Length - 16);
+            return fileBinary.GetSubArray(16, TextureFileFormatUtility.GetDataSize(textureFormat,width,height) );
         }
 
         /// <summary>

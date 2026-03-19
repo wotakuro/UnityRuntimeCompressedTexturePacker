@@ -11,7 +11,7 @@ set PVRTexToolCLI_EXE=PVRTexToolCLI.exe
 
 :: Encode format
 :: ASTC_4X4, ETC2_RGB, ETC2_RGBA, ETC2_RGB_A1
-set ENCODE_FORMAT=ASTC_4X4
+set ENCODE_FORMAT=ETC2_RGBA
 
 :: Encode quality
 :: etcfast, etcnormal, etcslow,
@@ -34,7 +34,7 @@ echo Encoding ....
 for /r %%f in (*.png) do (
     echo Encording : %%f
     
-    "%PVRTexToolCLI_EXE%" -i "%%f" -o "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf_%ENCODE_FORMAT%.ktx" -f %ENCODE_FORMAT%,UBN,sRGB -flip y -ics sRGB
+    "%PVRTexToolCLI_EXE%" -i "%%f" -o "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf_%ENCODE_FORMAT%.ktx" -f %ENCODE_FORMAT%,UBN,sRGB -flip y -ics sRGB -q %ENCODE_QUALITY%
     
     if !errorlevel! equ 0 (
         echo Complete: %%~nf.astc

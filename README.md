@@ -14,15 +14,27 @@ feature plan
 https://github.com/ARM-software/astc-encoder
 
 ```
+:: 4x4,5x5,6x6,8x8,10x10,12x12
 astcenc -cs input.png output.astc 4x4 -exhaustive -yflip
 ```
 ### KTX version1 Texture file( ETC2 - ASTC )
 https://developer.imaginationtech.com/solutions/pvrtextool/
 
 ```
-PVRTexToolCLI -i test.png -o test.ktx -flip y -f ETC2_RGB_A1,UBN,sRGB -ics sRGB
+:: ETC2_RGB_A1,ETC2_RGB,ETC2_RGBA
+PVRTexToolCLI -i test.png -o test.ktx -flip y -f ETC2_RGB_A1,UBN,sRGB -ics sRGB -q etcslow
+
+:: ASTC_4x4,ASTC_5x5,ASTC_6x6,ASTC_8x8,ASTC_10x10,ASTC_12x12
+PVRTexToolCLI -i test.png -o test.ktx -flip y -f ASTC_4x4,UBN,sRGB -ics sRGB -q astcexhaustive
 ```
 
+### DDS file (BC1,BC3,BC7)
+https://github.com/microsoft/DirectXTex/releases
+
+```
+:: BC7_UNORM , BC3_UNORM , BC1_UNORM
+Texcov -f BC7_UNORM test.png -nogpu -y -srgi -srgbo -vflip
+```
 ## How to use
 
 ### Single astc texture load

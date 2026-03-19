@@ -17,7 +17,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
     public class CompressedTexturePacker : IDisposable
     {
         // Texture format
-        private TextureFormat textureFormat;
+        public TextureFormat textureFormat {  get; private set; }
         // Texture size
         private int textureWidth;
         private int textureHeight;
@@ -181,6 +181,36 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 case TextureFormat.ASTC_12x12:
                     this.blockX = this.blockY = 12;
                     this.blockByteSize = 16;
+                    break;
+                // DXT1 4x4 64Bit (8Byte)
+                case TextureFormat.DXT1:
+                    this.blockX = this.blockY = 4;
+                    this.blockByteSize = 8;
+                    break;
+                // DXT5 4x4 128Bit (16Byte)
+                case TextureFormat.DXT5:
+                    this.blockX = this.blockY = 4;
+                    this.blockByteSize = 16;
+                    break;
+                // BC7 4x4 128Bit (16Byte)
+                case TextureFormat.BC7:
+                    this.blockX = this.blockY = 4;
+                    this.blockByteSize = 16;
+                    break;
+                // ETC2 RGB 4x4 64bit (8Byte)
+                case TextureFormat.ETC2_RGB:
+                    this.blockX = this.blockY = 4;
+                    this.blockByteSize = 8;
+                    break;
+                // ETC2 RGBA 4x4 128Bit (16Byte)
+                case TextureFormat.ETC2_RGBA8:
+                    this.blockX = this.blockY = 4;
+                    this.blockByteSize = 16;
+                    break;
+                // ETC2 RGBA1 4x4 64Bit(8Byte)
+                case TextureFormat.ETC2_RGBA1:
+                    this.blockX = this.blockY = 4;
+                    this.blockByteSize = 8;
                     break;
             }
             this.rectResolveAlgorithm = resolveAlgorithm;

@@ -201,8 +201,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 542601553}
   m_HandleRect: {fileID: 542601552}
   m_Direction: 0
-  m_Value: 1
-  m_Size: 0.99999994
+  m_Value: 0
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -464,7 +464,7 @@ GameObject:
   - component: {fileID: 517670646}
   - component: {fileID: 517670645}
   m_Layer: 0
-  m_Name: TextureListTestCode
+  m_Name: TextureListSample
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -657,7 +657,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 308741224}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.887078
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -1058,7 +1058,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 2.5503278}
+  m_AnchoredPosition: {x: 0, y: 0.000019807592}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1911593255

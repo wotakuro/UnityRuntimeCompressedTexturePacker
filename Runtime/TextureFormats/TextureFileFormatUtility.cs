@@ -70,8 +70,14 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
             {
                 return null;
             }
+            int width = textureFormatFile.width;
+            int height = textureFormatFile.height;
+            if (ShouldMultiple4Size(textureFormatFile.textureFormat))
+            {
+                ExpandSizeToMultiple4Size(ref width, ref height);
+            }
 
-            var tex = new Texture2D( textureFormatFile.width, textureFormatFile.height, textureFormatFile.textureFormat, false, isLinearColor);
+            var tex = new Texture2D( width, height, textureFormatFile.textureFormat, false, isLinearColor);
             if (tex != null)
             {
                 var rawData = textureFormatFile.GeImageDataWithoutMipmap(fileBinary);
@@ -79,6 +85,47 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
                 tex.Apply();
             }
             return tex;
+        }
+        
+        /// <summary>
+        /// 幅及び高さを4の倍数に拡張します
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ExpandSizeToMultiple4Size(ref int width, ref int height)
+        {
+            width = ((width + 3) / 4) * 4;
+            height = ((height + 3) / 4) * 4;
+        }
+
+        /// <summary>
+        /// 4の倍数である必要があるフォーマットか？
+        /// </summary>
+        /// <param name="format">テクスチャフォーマット</param>
+        /// <returns>4の倍数であるひつようならTrue </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ShouldMultiple4Size(TextureFormat format)
+        {
+            switch (format)
+            {
+                // BC
+                case TextureFormat.BC4:                
+                case TextureFormat.BC5:
+                case TextureFormat.BC6H:
+                case TextureFormat.BC7:
+                // DXT
+                case TextureFormat.DXT1:
+                case TextureFormat.DXT5:
+                // ETC
+                case TextureFormat.ETC_RGB4:
+                case TextureFormat.ETC2_RGB:
+                case TextureFormat.ETC2_RGBA8:
+                case TextureFormat.ETC2_RGBA1:
+                    return true;
+
+            }
+            return false;
         }
 
 
