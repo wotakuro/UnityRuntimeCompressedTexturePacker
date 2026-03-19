@@ -71,12 +71,22 @@ namespace UTJ.RuntimeCompressedTexturePacker
         }
 
 
+        /// <summary>
+        /// 4Byteアラインされているかチェックして返します
+        /// </summary>
+        /// <param name="ptr">Pointer指定</param>
+        /// <returns>4バイトアラインされているならTrueを返します</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe bool Is4ByteAlign(void* ptr)
         {
             return (((nuint)ptr & 3) == 0);
         }
 
+        /// <summary>
+        /// 8Byteアラインされているかチェックして返します
+        /// </summary>
+        /// <param name="ptr">Pointer指定</param>
+        /// <returns>8バイトアラインされているならTrueを返します</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe bool Is8ByteAlign(void* ptr)
         {

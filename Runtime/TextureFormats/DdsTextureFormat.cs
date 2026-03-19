@@ -126,9 +126,14 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             }
         }
 
-        public NativeArray<byte> GeImageData(NativeArray<byte> fileBinary)
+        public NativeArray<byte> GeImageDataWithoutMipmap(NativeArray<byte> fileBinary)
         {
-            throw new System.NotImplementedException();
+            int head = 128;
+            if (this.hasDxt10Extention)
+            {
+                head += 20;
+            }
+            return fileBinary.GetSubArray(head, fileBinary.Length - head);
         }
 
         public bool LoadHeader(NativeArray<byte> fileBinary)
@@ -217,15 +222,30 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool HasDXT10Extention(uint val) {
-            return true;
+            return (val == (uint)DdsFourCC.DX10);
         }
 
         public Texture2D LoadTexture(NativeArray<byte> fileBinary, bool isLinearColor = false, bool useMipmap = false)
         {
-            throw new System.NotImplementedException();
+            if (!this.LoadHeader(fileBinary))
+            {
+                return null;
+            }
+            if (!this.IsValid)
+            {
+                return null;
+            }
+            var tex = new Texture2D((int)width, (int)height, this.textureFormat, false, isLinearColor);
+            if (tex != null)
+            {
+                var rawData = this.GeImageDataWithoutMipmap(fileBinary);
+                tex.LoadRawTextureData(rawData);
+                tex.Apply();
+            }
+            return tex;
         }
 
-        public bool SignatureValid(NativeArray<byte> fileBinary)
+        public static bool SignatureValid(NativeArray<byte> fileBinary)
         {
 
             if(fileBinary[0] == 0x44 && fileBinary[0] == 0x44 && fileBinary[0] == 0x53 && fileBinary[0] == 0x20)

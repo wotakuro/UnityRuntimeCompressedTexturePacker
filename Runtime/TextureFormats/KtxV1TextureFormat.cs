@@ -197,7 +197,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             }
         }
 
-        public NativeArray<byte> GeImageData(NativeArray<byte> fileBinary)
+        public NativeArray<byte> GeImageDataWithoutMipmap(NativeArray<byte> fileBinary)
         {
             int head = 64 + (int)this.bytesOfKeyValueData;
             uint size = BytesToOtherTypesUtility.ReadUintFast(fileBinary, head);
@@ -206,7 +206,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
         public bool LoadHeader(NativeArray<byte> fileBinary)
         {
-            if (!this.SignatureValid(fileBinary))
+            if (!SignatureValid(fileBinary))
             {
                 this.endianness = 0;
                 this.pixelWidth = 0;
@@ -262,17 +262,22 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             {
                 return null;
             }
-            var tex = CreateFromHeader(isLinearColor);
+            var tex = new Texture2D((int)width, (int)height, this.textureFormat,false, isLinearColor);
             if (tex != null)
             {
-                var rawData = this.GeImageData(fileBinary);
+                var rawData = this.GeImageDataWithoutMipmap(fileBinary);
                 tex.LoadRawTextureData(rawData);
                 tex.Apply();
             }
             return tex;
         }
 
-        public bool SignatureValid(NativeArray<byte> fileBinary)
+        /// <summary>
+        /// ファイル形式のチェックを行います
+        /// </summary>
+        /// <param name="fileBinary">ファイルの中身</param>
+        /// <returns>先頭数Byteを読み込んで、対象のフォーマットであるかを確認します</returns>
+        public static bool SignatureValid(NativeArray<byte> fileBinary)
         {
             if(!fileBinary.IsCreated || fileBinary.Length < 64)
             {
@@ -287,12 +292,5 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             return false;
         }
 
-        // Texture作成
-        private Texture2D CreateFromHeader(bool isLinearColor)
-        {
-            var texture = new Texture2D((int)width, (int)height, this.textureFormat,
-                false, isLinearColor);
-            return texture;
-        }
     }
 }

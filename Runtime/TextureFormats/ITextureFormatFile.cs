@@ -32,15 +32,9 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
         /// </summary>
         /// <param name="fileBinary">ファイル全体のバイナリデータ</param>
         /// <returns>Headerを除いた画像の実データ部分</returns>
-        public NativeArray<byte> GeImageData(NativeArray<byte> fileBinary);
+        public NativeArray<byte> GeImageDataWithoutMipmap(NativeArray<byte> fileBinary);
 
 
-        /// <summary>
-        /// ファイル形式のチェックを行います
-        /// </summary>
-        /// <param name="fileBinary">ファイルの中身</param>
-        /// <returns>先頭数Byteを読み込んで、対象のフォーマットであるかを確認します</returns>
-        public bool SignatureValid(NativeArray<byte> fileBinary);
 
         /// <summary>
         /// Headerのロード

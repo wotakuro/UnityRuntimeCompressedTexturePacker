@@ -66,14 +66,12 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         /// </summary>
         /// <param name="fileBinary">ファイルの中身</param>
         /// <returns>先頭数Byteを読み込んで、対象のフォーマットであるかを確認します</returns>
-        public bool SignatureValid(NativeArray<byte> fileBinary)
+        public static bool SignatureValid(NativeArray<byte> fileBinary)
         {
             // 先頭4Byte
             if (!fileBinary.IsCreated || fileBinary.Length < 16 ||
                 fileBinary[0] != 0x13 || fileBinary[1] != 0xAB || fileBinary[2] != 0xA1 || fileBinary[3] != 0x5C)
             {
-                this.block_x = this.block_y = this.block_z = 0;
-                this.dim_x = this.dim_y = this.dim_z = 0;
                 return false;
             }
             return true;
@@ -112,7 +110,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         /// <param name="fileBinary">ファイル全体のバイナリデータ</param>
         /// <returns>実データ部分</returns>
 
-        public NativeArray<byte> GeImageData(NativeArray<byte> fileBinary)
+        public NativeArray<byte> GeImageDataWithoutMipmap(NativeArray<byte> fileBinary)
         {
             return fileBinary.GetSubArray(16, fileBinary.Length - 16);
         }
@@ -132,9 +130,9 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             {
                 return null;
             }
-            var tex = CreateFromHeader(isLinearColor);
-            if(tex != null) {
-                var rawData = this.GeImageData(fileBinary);
+            var tex = new Texture2D((int)width, (int)height, this.textureFormat, false, isLinearColor);
+            if (tex != null) {
+                var rawData = this.GeImageDataWithoutMipmap(fileBinary);
                 tex.LoadRawTextureData( rawData);
                 tex.Apply();
             }
@@ -178,12 +176,6 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
                     format = TextureFormat.ARGB32;
                     return false;
             }
-        }
-        // Texture作成
-        private Texture2D CreateFromHeader(bool isLinearColor )
-        {
-            var texture = new Texture2D( (int)width, (int)height, this.textureFormat,false, isLinearColor);
-            return texture;
         }
 
     }
