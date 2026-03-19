@@ -11,7 +11,7 @@ set TEXCONV_EXE=Texconv.exe
 
 :: Encode format
 :: BC1_UNORM , BC3_UNORM , BC7_UNORM
-set ENCODE_FORMAT=BC1_UNORM
+set ENCODE_FORMAT=BC7_UNORM
 
 
 
@@ -30,7 +30,7 @@ echo Encoding ....
 for /r %%f in (*.png) do (
     echo Encording : %%f
     
-    "%TEXCONV_EXE%" -f %ENCODE_FORMAT% "%%f" -o "%OUTPUT_DIR%\\%ENCODE_FORMAT%" -nogpu -y -srgbi -srgbo
+    "%TEXCONV_EXE%" -f %ENCODE_FORMAT% "%%f" -o "%OUTPUT_DIR%\\%ENCODE_FORMAT%" -nogpu -y -srgbi -srgbo -vflip
     move /Y "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf.dds" "%OUTPUT_DIR%\\%ENCODE_FORMAT%\\%%~nf_%ENCODE_FORMAT%.dds"
     
     if !errorlevel! equ 0 (

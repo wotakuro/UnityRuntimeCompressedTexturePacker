@@ -6,7 +6,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
     /// <summary>
     /// TextureFile自体のフォーマット
     /// </summary>
-    public interface ITextureFormatFile
+    public interface ITextureFileFormat
     {
         /// <summary>
         /// テクスチャファイルの幅

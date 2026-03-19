@@ -129,7 +129,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     yield return null;
                 }
-                AstcTextureFormat astc = new AstcTextureFormat();
+                AstcTextureFile astc = new AstcTextureFile();
                 if (!astc.LoadHeader(fileReadBuffer))
                 {
                     if (onFailedFile != null)

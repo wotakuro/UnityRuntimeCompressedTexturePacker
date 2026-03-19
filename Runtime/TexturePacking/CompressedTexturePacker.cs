@@ -5,6 +5,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using System;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
 using System.Runtime.CompilerServices;
+using UTJ.RuntimeCompressedTexturePacker.Format;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -139,54 +140,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
             texture2D = null;
         }
 
-        /// <summary>
-        /// Textureのフォーマットと幅、高さから必要なデータサイズを返します
-        /// </summary>
-        /// <param name="format">テクスチャフォーマット</param>
-        /// <param name="width">幅</param>
-        /// <param name="height">高さ</param>
-        /// <returns></returns>
-        public static int GetDataSize(TextureFormat format, int width, int height)
-        {
-            switch (format)
-            {
-                // ASTC block,
-                case TextureFormat.ASTC_4x4:
-                    return GetTextureDataSize(4, 4, 16, width, height);
-                case TextureFormat.ASTC_5x5:
-                    return GetTextureDataSize(5, 5, 16, width, height);
-                case TextureFormat.ASTC_6x6:
-                    return GetTextureDataSize(6, 6, 16, width, height);
-                case TextureFormat.ASTC_8x8:
-                    return GetTextureDataSize(8, 8, 16, width, height);
-                case TextureFormat.ASTC_10x10:
-                    return GetTextureDataSize(10, 10, 16, width, height);
-                case TextureFormat.ASTC_12x12:
-                    return GetTextureDataSize(12, 12, 16, width, height);
-                // WIP
-#if false
-                // DXT1 4x4 64Bit (8Byte)
-                case TextureFormat.DXT1:
-                    return GetTextureDataSize(4, 4, 8, width, height);
-                // DXT5 4x4 128Bit (16Byte)
-                case TextureFormat.DXT5:
-                    return GetTextureDataSize(4, 4, 16, width, height);
-                // BC7 4x4 128Bit (16Byte)
-                case TextureFormat.BC7:
-                    return GetTextureDataSize(4, 4, 16, width, height);
-                // ETC2 RGB 4x4 64bit (8Byte)
-                case TextureFormat.ETC2_RGB:
-                    return GetTextureDataSize(4, 4, 8, width, height);
-                // ETC2 RGBA 4x4 128Bit (16Byte)
-                case TextureFormat.ETC2_RGBA8:
-                    return GetTextureDataSize(4, 4, 16, width, height);
-                // ETC2 RGBA1 4x4 64Bit(8Byte)
-                case TextureFormat.ETC2_RGBA1:
-                    return GetTextureDataSize(4, 4, 8, width, height);
-#endif
-            }
-            return 0;
-        }
 
 
         /// <summary>
@@ -243,7 +196,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         {
             if (!this.textureLowData.IsCreated)
             {
-                this.textureLowData = new NativeArray<byte>(GetDataSize(this.textureFormat, this.textureWidth, this.textureHeight), Allocator.Persistent);
+                this.textureLowData = new NativeArray<byte>(TextureFileFormatUtility.GetDataSize(this.textureFormat, this.textureWidth, this.textureHeight), Allocator.Persistent);
                 switch (this.textureFormat) {
                     case TextureFormat.ASTC_4x4:
                     case TextureFormat.ASTC_5x5:
@@ -458,17 +411,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
         // Textureの幅とサイズ、データ自体の長さを元にValidationを行います
         private bool ValidateDataLength(int width,int height,int length)
         {
-            int expectedLength = GetDataSize(this.textureFormat, width, height);
+            int expectedLength = TextureFileFormatUtility.GetDataSize(this.textureFormat, width, height);
             return (expectedLength == length);
         }
 
-        // ASTCのブロックサイズ、Textureのサイズを受け取り、テクスチャ自体のデータサイズを返します
-        private static int GetTextureDataSize(int block_x, int block_y, int blockByte, int width, int height)
-        {
-            int blockXnum = (width + block_x - 1) / block_x;
-            int blockYnum = (height + block_y - 1) / block_y;
-            return blockXnum * blockYnum * blockByte;
-        }
 
         // 全てのPixelをASTCでクリアします
         private void AstcAlphaClearBuffer()

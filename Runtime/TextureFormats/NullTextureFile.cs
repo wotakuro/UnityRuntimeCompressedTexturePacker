@@ -1,16 +1,12 @@
-﻿using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Text;
-using NUnit.Framework.Interfaces;
-using Unity.Collections;
+﻿using Unity.Collections;
 using UnityEngine;
-using UnityEngine.LightTransport;
+
 
 namespace UTJ.RuntimeCompressedTexturePacker.Format {
     /// <summary>
     /// 適切なTextureFormatが無かった時
     /// </summary>
-    public unsafe struct NullTextureFormat : ITextureFormatFile
+    public unsafe struct NullTextureFile : ITextureFileFormat
     {
         public int width => throw new System.NotImplementedException();
 

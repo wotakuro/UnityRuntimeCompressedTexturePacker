@@ -1,15 +1,14 @@
-﻿using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Text;
-using NUnit.Framework.Interfaces;
+﻿using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.LightTransport;
 
 namespace UTJ.RuntimeCompressedTexturePacker.Format {
-
-    public unsafe struct DdsTextureFormat : ITextureFormatFile
+    /// <summary>
+    /// .ddsファイルのテクスチャファイル
+    /// </summary>
+    public unsafe struct DdsTextureFile : ITextureFileFormat
     {
+        // DXGIのFormat
         private enum DXGI_FORMAT : uint
         {
             DXGI_FORMAT_BC1_TYPELESS = 70,
@@ -35,6 +34,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             DXGI_FORMAT_BC7_UNORM_SRGB = 99,
         }
 
+        // DdsFourCCの値
         private enum DdsFourCC :uint
         {
             DX10 = 0x30315844,
@@ -133,7 +133,8 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
             {
                 head += 20;
             }
-            return fileBinary.GetSubArray(head, fileBinary.Length - head);
+            int length = TextureFileFormatUtility.GetDataSize(this.textureFormat, this.width, this.height);
+            return fileBinary.GetSubArray(head, length);
         }
 
         public bool LoadHeader(NativeArray<byte> fileBinary)
@@ -227,32 +228,17 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
 
         public Texture2D LoadTexture(NativeArray<byte> fileBinary, bool isLinearColor = false, bool useMipmap = false)
         {
-            if (!this.LoadHeader(fileBinary))
-            {
-                return null;
-            }
-            if (!this.IsValid)
-            {
-                return null;
-            }
-            var tex = new Texture2D((int)width, (int)height, this.textureFormat, false, isLinearColor);
-            if (tex != null)
-            {
-                var rawData = this.GeImageDataWithoutMipmap(fileBinary);
-                tex.LoadRawTextureData(rawData);
-                tex.Apply();
-            }
-            return tex;
+            return TextureFileFormatUtility.CreateTextureWithoutMipmap(this,fileBinary,isLinearColor);
         }
 
         public static bool SignatureValid(NativeArray<byte> fileBinary)
         {
-
-            if(fileBinary[0] == 0x44 && fileBinary[0] == 0x44 && fileBinary[0] == 0x53 && fileBinary[0] == 0x20)
+            if(fileBinary[0] == 0x44 && fileBinary[1] == 0x44 && fileBinary[2] == 0x53 && fileBinary[3] == 0x20)
             {
                 return true;
             }
             return false;
         }
+
     }
 }

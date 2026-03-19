@@ -11,7 +11,7 @@ set PVRTexToolCLI_EXE=PVRTexToolCLI.exe
 
 :: Encode format
 :: ASTC_4X4, ETC2_RGB, ETC2_RGBA, ETC2_RGB_A1
-set ENCODE_FORMAT=ETC2_RGBA
+set ENCODE_FORMAT=ASTC_4X4
 
 :: Encode quality
 :: etcfast, etcnormal, etcslow,

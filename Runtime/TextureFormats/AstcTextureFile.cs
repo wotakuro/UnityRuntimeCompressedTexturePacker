@@ -9,7 +9,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
     /// Arm社より提供されているastc-encoder (astcenc) が書き出すASTCテクスチャツール
     /// https://github.com/ARM-software/astc-encoder
     /// </summary>
-    public struct AstcTextureFormat: ITextureFormatFile
+    public struct AstcTextureFile: ITextureFileFormat
     {
         // ASTCのブロックの幅
         public byte block_x;
@@ -122,21 +122,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format {
         /// <returns></returns>
         public Texture2D LoadTexture(NativeArray<byte> fileBinary, bool isLinearColor = false, bool useMipmap= false)
         {
-            if( !this.LoadHeader(fileBinary))
-            {
-                return null;
-            }
-            if(!this.IsValid)
-            {
-                return null;
-            }
-            var tex = new Texture2D((int)width, (int)height, this.textureFormat, false, isLinearColor);
-            if (tex != null) {
-                var rawData = this.GeImageDataWithoutMipmap(fileBinary);
-                tex.LoadRawTextureData( rawData);
-                tex.Apply();
-            }
-            return tex;
+            return TextureFileFormatUtility.CreateTextureWithoutMipmap(this, fileBinary, isLinearColor);
         }
 
 
