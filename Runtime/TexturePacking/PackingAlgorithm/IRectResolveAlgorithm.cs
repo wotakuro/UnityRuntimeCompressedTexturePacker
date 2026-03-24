@@ -5,7 +5,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
     /// <summary>
     /// Textureパッキングを実際にどのように行うかを決めるアルゴリズム
     /// </summary>
-    public interface IRectResolveAlgorithm
+    public interface IRectResolveAlgorithm : System.IDisposable
     {
         /// <summary>
         /// 登録済みTextureを削除する事が出来るか？を返します

@@ -64,10 +64,25 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
             return true;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public bool Remove(in RectInt node)
         {
-            throw new NotImplementedException();
+            return false;
         }
+
+        /// <summary>
+        /// Dispose処理
+        /// </summary>
+        public void Dispose()
+        {
+
+        }
+
         /// <summary>
         /// 矩形を配置し、既存の空きスペースを分割する
         /// </summary>
@@ -192,6 +207,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
             }
             return sb.ToString();
         }
+
 #endif
     }
 }

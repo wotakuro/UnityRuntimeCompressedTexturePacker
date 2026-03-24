@@ -124,6 +124,43 @@ namespace UTJ.RuntimeCompressedTexturePacker
         }
 
         /// <summary>
+        /// 特定区域をクリアします
+        /// </summary>
+        /// <param name="rect">Rectの指定</param>
+        public unsafe void ClearRect(in RectInt rect)
+        {
+            switch (this.textureFormat)
+            {
+                case TextureFormat.ASTC_4x4:
+                case TextureFormat.ASTC_5x5:
+                case TextureFormat.ASTC_6x6:
+                case TextureFormat.ASTC_8x8:
+                case TextureFormat.ASTC_10x10:
+                case TextureFormat.ASTC_12x12:
+                    this.ClearBufferRect(rect,SetupAstcCleardata);
+                    break;
+                case TextureFormat.DXT5:
+                    this.ClearBufferRect(rect, SetupBC3UNormClearData);
+                    break;
+                case TextureFormat.BC7:
+                    this.ClearBufferRect(rect, SetupBC7UNormClearData);
+                    break;
+                case TextureFormat.ETC2_RGBA8:
+                    this.ClearBufferRect(rect, SetupEtc2RGBA8ClearData);
+                    break;
+                case TextureFormat.DXT1:
+                    this.ClearBufferRect(rect, SetupBC1UNormClearData);
+                    break;
+                case TextureFormat.ETC2_RGBA1:
+                    this.ClearBufferRect(rect, SetupEtc2RGBA1ClearData);
+                    break;
+                case TextureFormat.ETC2_RGB:
+                    this.ClearBufferRect(rect, SetupEtc2RGBClearData);
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Dispose処理
         /// </summary>
         public void Dispose()
@@ -134,6 +171,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 UnityEngine.Object.Destroy(texture2D);
             }
             texture2D = null;
+            if (rectResolveAlgorithm != null)
+            {
+                rectResolveAlgorithm.Dispose();
+                rectResolveAlgorithm = null;
+            }
         }
 
 
@@ -424,7 +466,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
         }
 
-
+        // 1Byteずつ書き込みます。重いです
         private static unsafe void WriteBlockSlow(void* dst, void* src, int blockSize, int allBlockXNum,
             int writeBlockXStart, int writeBlockYStart,
             int writeBlockXNum, int writeBlockYNum)
@@ -502,6 +544,65 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
             }
         }
+
+
+        // 指定区域をクリアします
+        private void ClearBufferRect(in RectInt rectInt, SetupClearData setupClearDataFunc)
+        {
+            if (!textureLowData.IsCreated)
+            {
+                return;
+            }
+            unsafe
+            {
+                ulong* clearData = stackalloc ulong[2];
+                setupClearDataFunc((byte*)clearData);
+
+                int writeBlockXStart = rectInt.x / this.blockX;
+                int writeBlockYStart = rectInt.y / this.blockY;
+                int writeBlockXNum = (rectInt.width + this.blockX - 1) / this.blockX;
+                int writeBlockYNum = (rectInt.height + this.blockY - 1) / this.blockY;
+                int allBlockXNum = (this.textureWidth + this.blockX - 1) / this.blockX;
+
+                int longSize = this.blockByteSize / 8;
+
+                ulong* dstPtr = (ulong*)this.textureLowData.GetUnsafePtr();
+
+                int dstOffset = (((writeBlockYStart * allBlockXNum) + writeBlockXStart) * longSize);
+
+                dstPtr += dstOffset;
+
+                if (this.blockByteSize == 16)
+                {
+                    for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+                    {
+                        for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                        {
+                            // write 128bit
+                            *dstPtr = clearData[0];
+                            ++dstPtr;
+                            *dstPtr = clearData[1];
+                            ++dstPtr;
+                        }
+                        dstPtr += ((allBlockXNum - writeBlockXNum) * longSize);
+                    }
+                }
+                else if (this.blockByteSize == 8)
+                {
+                    for (int yIndex = 0; yIndex < writeBlockYNum; ++yIndex)
+                    {
+                        for (int xIndex = 0; xIndex < writeBlockXNum; ++xIndex)
+                        {
+                            // write 648bit
+                            *dstPtr = clearData[0];
+                            ++dstPtr;
+                        }
+                        dstPtr += ((allBlockXNum - writeBlockXNum) * longSize);
+                    }
+                }
+            }
+        }
+
         // クリアになるような ASTCブロックのデータを作成
         private unsafe void SetupAstcCleardata(byte* setupData)
         {
