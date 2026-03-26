@@ -34,5 +34,13 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         /// <param name="node">削除したい矩形を返します</param>
         /// <returns>削除に成功したかを返します</returns>
         public bool Remove(in RectInt node);
+
+        /// <summary>
+        /// 挿入できるかを判定して返します
+        /// </summary>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
+        /// <returns>挿入可能ならTrueを返します</returns>
+        public bool CanInsert(int width, int height);
     }
 }

@@ -103,6 +103,23 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
             return true;
         }
 
+
+        /// <summary>
+        /// 挿入できるかを判定して返します
+        /// </summary>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
+        /// <returns>挿入可能ならTrueを返します</returns>
+        public bool CanInsert(int width, int height)
+        {
+            if (width > this.gridWidth || height > this.gridHeight)
+            {
+                return false;
+            }
+            int idx = this.bitFlags.FindFalseIndex();
+            return (idx >= 0);
+        }
+
         /// <summary>
         /// Dispose処理
         /// </summary>

@@ -65,6 +65,27 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         }
 
         /// <summary>
+        /// 挿入できるかを判定して返します
+        /// </summary>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
+        /// <returns>挿入可能ならTrueを返します</returns>
+        public bool CanInsert(int width, int height)
+        {
+            for (int i = 0; i < freeRectangles.Count; i++)
+            {
+                RectInt free = freeRectangles[i];
+
+                // 入るかチェック（回転は考慮しない版）
+                if (free.width >= width && free.height >= height)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="node"></param>
@@ -207,6 +228,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
             }
             return sb.ToString();
         }
+
 
 #endif
     }

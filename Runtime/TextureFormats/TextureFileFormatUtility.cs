@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 
 namespace UTJ.RuntimeCompressedTexturePacker.Format
 {
@@ -47,6 +46,71 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
             return SystemInfo.SupportsTextureFormat(textureFormat);
 
 #endif
+        }
+
+        public static void GetBlockInfo(TextureFormat textureFormat,out int blockX,out int blockY,out int blockByteSize)
+        {
+
+            blockX = blockY = 0;
+            blockByteSize = 0;
+            switch (textureFormat)
+            {
+                case TextureFormat.ASTC_4x4:                   
+                    blockX = blockY = 4;
+                    blockByteSize = 16;
+                    break;
+                case TextureFormat.ASTC_5x5:
+                    blockX = blockY = 5;
+                    blockByteSize = 16;
+                    break;
+                case TextureFormat.ASTC_6x6:
+                    blockX = blockY = 6;
+                    blockByteSize = 16;
+                    break;
+                case TextureFormat.ASTC_8x8:
+                    blockX = blockY = 8;
+                    blockByteSize = 16;
+                    break;
+                case TextureFormat.ASTC_10x10:
+                    blockX = blockY = 10;
+                    blockByteSize = 16;
+                    break;
+                case TextureFormat.ASTC_12x12:
+                    blockX = blockY = 12;
+                    blockByteSize = 16;
+                    break;
+                // DXT1 4x4 64Bit (8Byte)
+                case TextureFormat.DXT1:
+                    blockX = blockY = 4;
+                    blockByteSize = 8;
+                    break;
+                // DXT5 4x4 128Bit (16Byte)
+                case TextureFormat.DXT5:
+                    blockX = blockY = 4;
+                    blockByteSize = 16;
+                    break;
+                // BC7 4x4 128Bit (16Byte)
+                case TextureFormat.BC7:
+                    blockX = blockY = 4;
+                    blockByteSize = 16;
+                    break;
+                // ETC2 RGB 4x4 64bit (8Byte)
+                case TextureFormat.ETC2_RGB:
+                    blockX = blockY = 4;
+                    blockByteSize = 8;
+                    break;
+                // ETC2 RGBA 4x4 128Bit (16Byte)
+                case TextureFormat.ETC2_RGBA8:
+                    blockX = blockY = 4;
+                    blockByteSize = 16;
+                    break;
+                // ETC2 RGBA1 4x4 64Bit(8Byte)
+                case TextureFormat.ETC2_RGBA1:
+                    blockX = blockY = 4;
+                    blockByteSize = 8;
+                    break;
+            }
+
         }
 
         /// <summary>

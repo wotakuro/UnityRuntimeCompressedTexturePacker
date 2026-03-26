@@ -69,12 +69,23 @@ namespace UTJ.RuntimeCompressedTexturePacker
         }
 
         /// <summary>
-        /// 
+        /// テクスチャーのデータを挿入できるかを返します
         /// </summary>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <param name="srcTextureLowData"></param>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
         /// <returns></returns>
+        public bool CanAppendTextureData(int width,int height)
+        {
+            return this.rectResolveAlgorithm.CanInsert(width,height);
+        }
+
+        /// <summary>
+        /// テクスチャーのデータを実際に行います
+        /// </summary>
+        /// <param name="width">幅</param>
+        /// <param name="height">高さ</param>
+        /// <param name="srcTextureLowData">テクスチャデータ</param>
+        /// <returns>見つかったRectを返します</returns>
         public Rect AppendTextureData(int width, int height, NativeArray<byte> srcTextureLowData)
         {
             this.InitLowTextureDataBufferIfNeeded();
@@ -193,64 +204,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.textureFormat = format;
             this.textureWidth = width;
             this.textureHeight = height;
+            TextureFileFormatUtility.GetBlockInfo(format, out this.blockX, out this.blockY, out this.blockByteSize);
+           
 
-            switch (textureFormat)
-            {
-                case TextureFormat.ASTC_4x4:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 16;
-                    break;
-                case TextureFormat.ASTC_5x5:
-                    this.blockX = this.blockY = 5;
-                    this.blockByteSize = 16;
-                    break;
-                case TextureFormat.ASTC_6x6:
-                    this.blockX = this.blockY = 6;
-                    this.blockByteSize = 16;
-                    break;
-                case TextureFormat.ASTC_8x8:
-                    this.blockX = this.blockY = 8;
-                    this.blockByteSize = 16;
-                    break;
-                case TextureFormat.ASTC_10x10:
-                    this.blockX = this.blockY = 10;
-                    this.blockByteSize = 16;
-                    break;
-                case TextureFormat.ASTC_12x12:
-                    this.blockX = this.blockY = 12;
-                    this.blockByteSize = 16;
-                    break;
-                // DXT1 4x4 64Bit (8Byte)
-                case TextureFormat.DXT1:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 8;
-                    break;
-                // DXT5 4x4 128Bit (16Byte)
-                case TextureFormat.DXT5:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 16;
-                    break;
-                // BC7 4x4 128Bit (16Byte)
-                case TextureFormat.BC7:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 16;
-                    break;
-                // ETC2 RGB 4x4 64bit (8Byte)
-                case TextureFormat.ETC2_RGB:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 8;
-                    break;
-                // ETC2 RGBA 4x4 128Bit (16Byte)
-                case TextureFormat.ETC2_RGBA8:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 16;
-                    break;
-                // ETC2 RGBA1 4x4 64Bit(8Byte)
-                case TextureFormat.ETC2_RGBA1:
-                    this.blockX = this.blockY = 4;
-                    this.blockByteSize = 8;
-                    break;
-            }
             this.rectResolveAlgorithm = resolveAlgorithm;
             this.rectResolveAlgorithm.Initialize(width, height);
             this.texture2D = new Texture2D(this.textureWidth, this.textureHeight, this.textureFormat, false, isLinearColor);
