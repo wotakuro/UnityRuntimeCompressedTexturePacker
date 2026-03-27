@@ -30,6 +30,11 @@
             "displayName": "04_IncrementalAtlasGeneration",
             "description": "This is a sample that automatically creates Atlas Textures and Sprites by loading multiple ASTC files placed under the StreamingAssets folder.",
             "path": "Samples~/04_IncrementalAtlasGeneration"
+        },
+        {
+            "displayName": "05_ReuseAtlasForFixedSizeImages",
+            "description": ".",
+            "path": "Samples~/05_ReuseAtlasForFixedSizeImages"
         }
     ]
 }
