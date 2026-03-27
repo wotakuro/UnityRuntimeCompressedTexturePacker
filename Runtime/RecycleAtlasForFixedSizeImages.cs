@@ -138,7 +138,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 return null;
             }
             this.requestedFiles.Add(path, requestFile);
-            loadQueue.Enqueue(path);
+            this.loadQueue.Enqueue(path);
 
             ++currentOrderValue;
             UpdateIfFrameChaged();
@@ -232,6 +232,13 @@ namespace UTJ.RuntimeCompressedTexturePacker
         {
             if (this.readHandle.Status == ReadStatus.Complete)
             {
+                if (!this.requestedFiles.ContainsKey(this.currentLoadingFile))
+                {
+                    this.currentLoadingFile = "";
+                    this.state = EState.None;
+                    return;
+                }
+
                 ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
                 fileFormat.LoadHeader(this.fileReadBuffer);
 
@@ -241,6 +248,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
                 var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
                     fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer));
+
+                if(rect.width <= 0 || rect.height <= 0)
+                {
+                    Debug.LogError("Failed Add data " + currentLoadingFile);
+                }
 
                 this.compressedTexturePacker.ApplyToTexture();
                 var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f),100.0f,0,SpriteMeshType.FullRect);
@@ -284,21 +296,26 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         private void RemoveOldSprite()
         {
-            RequestFile oldest = new RequestFile() { orderValue = uint.MaxValue };
-            foreach (var requestFile in requestedFiles.Values)
+            bool isFound = false;
+            while (!isFound && requestedFiles.Count > 0 )
             {
-                if (oldest.orderValue > requestFile.orderValue)
+                RequestFile oldest = new RequestFile() { orderValue = uint.MaxValue };
+                foreach (var requestFile in requestedFiles.Values)
                 {
-                    oldest = requestFile;
+                    if (oldest.orderValue > requestFile.orderValue)
+                    {
+                        oldest = requestFile;
+                    }
                 }
-            }
-            this.requestedFiles.Remove(oldest.file);
-            if (oldest.sprite)
-            {
-                RectInt rectInt = new RectInt((int)((oldest.sprite.rect.x + 0.5f) / actualGridWidth) * actualGridWidth,
-                    (int)((oldest.sprite.rect.y + 0.5f) / actualGridHeight) * actualGridHeight,
-                    actualGridWidth, actualGridHeight);
-                this.compressedTexturePacker.RemoveRect(rectInt);
+                this.requestedFiles.Remove(oldest.file);
+                if (oldest.sprite)
+                {
+                    RectInt rectInt = new RectInt((int)((oldest.sprite.rect.x + 0.5f) / actualGridWidth) * actualGridWidth,
+                        (int)((oldest.sprite.rect.y + 0.5f) / actualGridHeight) * actualGridHeight,
+                        actualGridWidth, actualGridHeight);
+                    this.compressedTexturePacker.RemoveRect(rectInt);
+                    isFound = true;
+                }
             }
             SortOutOrderNumber();
         }

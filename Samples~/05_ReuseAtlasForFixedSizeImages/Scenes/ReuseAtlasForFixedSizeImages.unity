@@ -410,7 +410,6 @@ GameObject:
   - component: {fileID: 865299840}
   - component: {fileID: 865299842}
   - component: {fileID: 865299841}
-  - component: {fileID: 865299843}
   m_Layer: 5
   m_Name: GeneratedAtlasTexture
   m_TagString: Untagged
@@ -473,23 +472,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 865299839}
   m_CullTransparentMesh: 1
---- !u!111 &865299843
-Animation:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 865299839}
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Animation: {fileID: 7400000, guid: ee0a7773a8ab0f447b11ad64938de6c2, type: 2}
-  m_Animations:
-  - {fileID: 7400000, guid: ee0a7773a8ab0f447b11ad64938de6c2, type: 2}
-  m_WrapMode: 0
-  m_PlayAutomatically: 1
-  m_AnimatePhysics: 0
-  m_UpdateMode: 0
-  m_CullingType: 0
 --- !u!1 &1013407398
 GameObject:
   m_ObjectHideFlags: 0

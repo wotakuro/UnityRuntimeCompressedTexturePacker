@@ -22,9 +22,6 @@ namespace UTJ.Sample
         private RawImage buildAtlasImage;
 
 
-        [SerializeField]
-        Sprite[] sprites;
-
         private RecycleAtlasForFixedSizeImages recycleAtlasForFixed;
 
         private ListItemContainer<IconItemComponent> iconItemsContainer;

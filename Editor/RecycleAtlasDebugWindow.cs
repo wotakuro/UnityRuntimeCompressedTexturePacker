@@ -42,6 +42,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Editor
             loadingQueueFoldout = new Foldout();
             loadingQueueFoldout.text = "Loading Queue";
             this.itemView.Add(loadingQueueFoldout);
+            loadingQueueFoldout.value = false;
 
 
             requestedFiles = new Foldout();
@@ -93,7 +94,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Editor
 
             for (int i = loadQueue.Count; i < childCount; ++i)
             {
-                result[i].visible = false;
+                result[i].style.visibility = Visibility.Hidden;
             }
             result = loadingQueueFoldout.contentContainer.Query<Label>().ToList();
             for (int i = 0; i < loadQueue.Count; ++i)
@@ -118,13 +119,13 @@ namespace UTJ.RuntimeCompressedTexturePacker.Editor
 
             for (int i = requestFiles.Count; i < childCount; ++i)
             {
-                result[i].visible = false;
+                result[i].style.visibility = Visibility.Hidden;
             }
             result = requestedFiles.contentContainer.Query<Label>().ToList();
             for (int i = 0; i < requestFiles.Count; ++i)
             {
                 var order = instance.GetOrderValueInRequestFile(requestFiles[i]);
-                result[i].text = System.IO.Path.GetFileName(requestFiles[i]) + "  " + order;
+                result[i].text =requestFiles[i] + "  " + order;
             }
         }
     }

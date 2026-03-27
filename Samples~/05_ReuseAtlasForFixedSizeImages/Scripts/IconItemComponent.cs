@@ -44,6 +44,7 @@ namespace UTJ.Sample
             this.iconPath = icon;
             this.loadingIconPath = loadingIcon;
             this.recycleAtlasForFixedSizeImages = recycleAtlas;
+            this.text.text = System.IO.Path.GetFileNameWithoutExtension(icon);
         }
 
         private void Update()
@@ -59,7 +60,6 @@ namespace UTJ.Sample
             this.loadingImage.rectTransform.localRotation = Quaternion.Euler(0, 0, Time.timeSinceLevelLoad * 360.0f);
 
             this.loadingImage.enabled = (imageSprite == null);
-
         }
 
 #if UNITY_EDITOR
