@@ -111,7 +111,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 ++currentOrderValue;
                 requestFile.orderValue = currentOrderValue;
-                this.requestedFiles[path]  = requestFile;
+                this.requestedFiles[path] = requestFile;
                 UpdateIfFrameChaged();
                 return requestFile.sprite;
             }
@@ -142,7 +142,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 return;
             }
             prevTimeFrameCount = Time.frameCount;
-            if(loadQueue.Count <= 0)
+            if (loadQueue.Count <= 0)
             {
                 return;
             }
@@ -164,7 +164,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         {
             RequestFile requestFile;
             this.currentLoadingFile = this.loadQueue.Dequeue();
-            if ( !this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
+            if (!this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
             {
                 return;
             }
@@ -184,6 +184,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.fileReadBuffer, requestFile.fileSize);
             this.state = EState.Loading;
+            if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
+            {
+                RemoveOldSprite();
+            }
+
         }
 
         /// <summary>
@@ -191,17 +196,17 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         private void WaitLoadProcess()
         {
-            if(this.readHandle.Status == ReadStatus.Complete)
+            if (this.readHandle.Status == ReadStatus.Complete)
             {
                 ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
                 fileFormat.LoadHeader(this.fileReadBuffer);
 
-                if(!this.compressedTexturePacker.CanAppendTextureData(fileFormat.width, fileFormat.height))
+                if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
                 {
                     RemoveOldSprite();
                 }
-                var rect = this.compressedTexturePacker.AppendTextureData( fileFormat.width,fileFormat.height,
-                    fileFormat.GeImageDataWithoutMipmap( this.fileReadBuffer ) );
+                var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
+                    fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer));
                 this.compressedTexturePacker.ApplyToTexture();
                 var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f));
                 if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
@@ -212,7 +217,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 this.currentLoadingFile = "";
                 this.state = EState.None;
             }
-            else if(readHandle.Status == ReadStatus.Failed || readHandle.Status == ReadStatus.Canceled || readHandle.Status == ReadStatus.Truncated)
+            else if (readHandle.Status == ReadStatus.Failed || readHandle.Status == ReadStatus.Canceled || readHandle.Status == ReadStatus.Truncated)
             {
                 this.state = EState.None;
             }
@@ -221,7 +226,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private void SortOutOrderNumber()
         {
             uint minimumOrderValue = uint.MaxValue;
-            foreach(var requestFile in requestedFiles.Values)
+            foreach (var requestFile in requestedFiles.Values)
             {
                 if (minimumOrderValue > requestFile.orderValue)
                 {
@@ -244,15 +249,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
             RequestFile oldest = new RequestFile() { orderValue = uint.MaxValue };
             foreach (var requestFile in requestedFiles.Values)
             {
-                if(oldest.orderValue > requestFile.orderValue)
+                if (oldest.orderValue > requestFile.orderValue)
                 {
                     oldest = requestFile;
                 }
             }
-            this.requestedFiles.Remove(oldest.file);            
-            if(oldest.sprite)
+            this.requestedFiles.Remove(oldest.file);
+            if (oldest.sprite)
             {
-                RectInt rectInt = new RectInt( (int)((oldest.sprite.rect.x + 0.5f) /actualGridWidth) * actualGridWidth,
+                RectInt rectInt = new RectInt((int)((oldest.sprite.rect.x + 0.5f) / actualGridWidth) * actualGridWidth,
                     (int)((oldest.sprite.rect.y + 0.5f) / actualGridHeight) * actualGridHeight,
                     actualGridWidth, actualGridHeight);
                 this.compressedTexturePacker.RemoveRect(rectInt);
@@ -262,11 +267,18 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         public void Dispose()
         {
-            if (!this.fileReadBuffer.IsCreated)
+            if (this.fileReadBuffer.IsCreated)
             {
                 this.fileReadBuffer.Dispose();
             }
-            resolveAlgorithm.Dispose();
+            if (this.resolveAlgorithm != null)
+            {
+                this.resolveAlgorithm.Dispose();
+            }
+            if (this.compressedTexturePacker != null)
+            {
+                this.compressedTexturePacker.Dispose();
+            }
         }
     }
 }
