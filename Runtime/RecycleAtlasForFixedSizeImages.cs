@@ -95,6 +95,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.resolveAlgorithm = new GridMapPacking(actualGridWidth, actualGridHeight);
             this.compressedTexturePacker = new CompressedTexturePacker(width, height, textureFormat,
                 false, this.resolveAlgorithm);
+            this.compressedTexturePacker.marginPixel = 0;
         }
 
         /// <summary>
@@ -123,6 +124,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             };
             if (requestFile.fileSize <= 0)
             {
+                Debug.LogWarning("FileSize zero " + path);
                 return null;
             }
             this.requestedFiles.Add(path, requestFile);
@@ -193,19 +195,22 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
                 fileFormat.LoadHeader(this.fileReadBuffer);
+
                 if(!this.compressedTexturePacker.CanAppendTextureData(fileFormat.width, fileFormat.height))
                 {
                     RemoveOldSprite();
                 }
-
-                var rect = this.compressedTexturePacker.AppendTextureData( fileFormat.width,fileFormat.height,this.fileReadBuffer );
+                var rect = this.compressedTexturePacker.AppendTextureData( fileFormat.width,fileFormat.height,
+                    fileFormat.GeImageDataWithoutMipmap( this.fileReadBuffer ) );
+                this.compressedTexturePacker.ApplyToTexture();
                 var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f));
                 if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
                 {
                     file.sprite = sprite;
                     this.requestedFiles[currentLoadingFile] = file;
                 }
-                this.state |= EState.Loading;
+                this.currentLoadingFile = "";
+                this.state = EState.None;
             }
             else if(readHandle.Status == ReadStatus.Failed || readHandle.Status == ReadStatus.Canceled || readHandle.Status == ReadStatus.Truncated)
             {
@@ -223,14 +228,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     minimumOrderValue = requestFile.orderValue;
                 }
             }
-
-            foreach(var kvs in requestedFiles)
+            /*
+            foreach(var kvs in requestedFiles.Keys)
             {
-                var key = kvs.Key;
-                var val = kvs.Value;
+                var key = kvs;
+                var val = this.requestedFiles[key];
                 val.orderValue = val.orderValue - minimumOrderValue;
                 requestedFiles[key] = val;
             }
+            */
         }
 
         private void RemoveOldSprite()
@@ -249,7 +255,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 RectInt rectInt = new RectInt( (int)((oldest.sprite.rect.x + 0.5f) /actualGridWidth) * actualGridWidth,
                     (int)((oldest.sprite.rect.y + 0.5f) / actualGridHeight) * actualGridHeight,
                     actualGridWidth, actualGridHeight);
-                this.compressedTexturePacker.ClearRect(rectInt);
+                this.compressedTexturePacker.RemoveRect(rectInt);
             }
             SortOutOrderNumber();
         }

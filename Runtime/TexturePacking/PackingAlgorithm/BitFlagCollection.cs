@@ -49,7 +49,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         /// </summary>
         public void Clear()
         {
-            for (int i = 0; i < this.Count; i++)
+            for (int i = 0; i < this.datas.Length; i++)
             {
                 this.datas[i] = 0;
             }
@@ -66,9 +66,11 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         /// <returns></returns>
         public int FindFalseIndex()
         {
+            string str = "";
             int length = datas.Length;
             for(int i = 0; i < length; ++i)
             {
+                str += datas[i] + "::";
                 if (datas[i] != 0xff)
                 {
                     int idx = GetFalseFlagIndex(datas[i]);
@@ -113,7 +115,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         {
             for(int i = 0; i < 8; ++i)
             {
-                if( (val & (1 <<i)) != 0)
+                if( (val & (1 <<i)) == 0)
                 {
                     return i;
                 }

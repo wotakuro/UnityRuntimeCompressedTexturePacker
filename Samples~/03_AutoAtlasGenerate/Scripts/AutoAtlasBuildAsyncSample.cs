@@ -29,7 +29,7 @@ namespace UTJ.Sample
         /// 生成したSprite一覧を出すところ
         /// </summary>
         [SerializeField]
-        private RectTransform spriteList;
+        private ScrollRect scrollRect;
 
         /// <summary>
         /// PackされたAtlasTextureを表示する所
@@ -175,7 +175,7 @@ namespace UTJ.Sample
                 this.AddSpriteToUI(sprite);
                 this.spriteListForDebug.Add(sprite);
             }
-            this.spriteList.sizeDelta = new Vector2(190.0f, -spritePositionY);
+            this.scrollRect.content.sizeDelta = new Vector2(190.0f, -spritePositionY);
             this.autoAtlasBuilder.ReleaseBuffers();
         }
 
@@ -201,7 +201,7 @@ namespace UTJ.Sample
         {
             var spriteGmo = new GameObject("spirte", typeof(RectTransform));
             var spriteRectTransform = spriteGmo.GetComponent<RectTransform>();
-            spriteRectTransform.SetParent(spriteList);
+            spriteRectTransform.SetParent(scrollRect.content);
 
 
             float height = 0.0f; 
@@ -238,6 +238,7 @@ namespace UTJ.Sample
             lineImg.color = Color.black;
 
             spritePositionY -= (height + 30);
+
         }
         // Debug用Sprite表示のRectTransformのセットアップ
         private void SetupRectTransformForDebugUI(RectTransform rectTransform,float width , float height,float positionY)

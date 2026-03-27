@@ -76,7 +76,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <returns></returns>
         public bool CanAppendTextureData(int width,int height)
         {
-            return this.rectResolveAlgorithm.CanInsert(width,height);
+            int withMarginWidth = ((width + blockX - 1 + marginPixel) / blockX) * blockX;
+            int withMarginHeight = ((height + blockY - 1 + marginPixel) / blockY) * blockY;
+            return this.rectResolveAlgorithm.CanInsert(withMarginWidth, withMarginHeight);
         }
 
         /// <summary>
@@ -92,6 +94,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             RectInt rectInt = new RectInt();
             if (!ValidateDataLength(width, height, srcTextureLowData.Length))
             {
+                Debug.LogWarning("data length is not valid " + srcTextureLowData.Length);
                 return Rect.zero;
             }
             int bodyWidth = ((width + blockX - 1 ) / blockX) * blockX;
@@ -138,8 +141,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// 特定区域をクリアします
         /// </summary>
         /// <param name="rect">Rectの指定</param>
-        public unsafe void ClearRect(in RectInt rect)
+        public unsafe void RemoveRect(in RectInt rect)
         {
+            this.rectResolveAlgorithm.Remove(rect);
             switch (this.textureFormat)
             {
                 case TextureFormat.ASTC_4x4:

@@ -67,12 +67,15 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         /// <returns></returns>
         public bool Insert(int width, int height, out RectInt bestNode)
         {
+
             if (width > this.gridWidth || height > this.gridHeight)
             {
+                Debug.LogWarning("size is not acceptable " + width + "x" + height + "::" + this.gridWidth + "x" + this.gridHeight);
                 bestNode = new RectInt(0, 0, 0, 0);
                 return false;
             }
             int idx = this.bitFlags.FindFalseIndex();
+
             if (idx<0)
             {
                 bestNode = new RectInt(0, 0, 0, 0);
@@ -114,6 +117,7 @@ namespace UTJ.RuntimeCompressedTexturePacker.Packing
         {
             if (width > this.gridWidth || height > this.gridHeight)
             {
+                Debug.LogWarning("size is not acceptable " + width + "x" + height + "::" + this.gridWidth + "x" + this.gridHeight);
                 return false;
             }
             int idx = this.bitFlags.FindFalseIndex();

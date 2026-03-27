@@ -2507,7 +2507,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimpleLoader
   textureTypeDropdown: {fileID: 238049559}
-  spriteList: {fileID: 2052408798}
+  scrollRect: {fileID: 665547688}
   rawImage: {fileID: 1795808656}
   debugTextFont: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   spriteListForDebug: []
