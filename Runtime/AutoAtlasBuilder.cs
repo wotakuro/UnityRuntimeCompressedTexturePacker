@@ -281,7 +281,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 else
                 {
                     var texture2d = compressedTexturePacker.texture2D;
-                    var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f));
+                    var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f),100.0f,0,SpriteMeshType.FullRect);
                     sprite.name = name;
                     this.generatedSpritesBuffer.Add(sprite);
                     this.generatedSpriteByFile.Add(file, sprite);

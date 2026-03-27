@@ -6,27 +6,29 @@ using UnityEngine;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.IO.LowLevel.Unsafe;
-using UnityEngine.U2D;
+using UnityEngine.Profiling;
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
-
-
 
     /// <summary>
     /// ファイルリストを渡して自動的にAtlasを生成してくれます
     /// </summary>
     public class RecycleAtlasForFixedSizeImages : System.IDisposable
     {
+#if RCTP_DEVMODE
+        public static RecycleAtlasForFixedSizeImages Instance { get; private set; }
+#endif
         private enum EState
         {
             None,
             Loading,
         }
         // リクエストされたファイル
+
+
         private struct RequestFile
         {
             public string file;
@@ -42,6 +44,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         /// ロードのキュー
         private Queue<string> loadQueue = new Queue<string>();
+
+        // StringのKey用のBuffer
+        private List<string> keyBuffer = new List<string>();
         // 一個前に実行したときのTime.frameCount
         private int prevTimeFrameCount = 0;
         // ReadHandle
@@ -64,6 +69,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private int actualGridWidth;
         /// 実際のGridの高さ（テクスチャブロックサイズを考慮)
         private int actualGridHeight;
+
 
         /// <summary>
         /// Texture2D
@@ -96,6 +102,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.compressedTexturePacker = new CompressedTexturePacker(width, height, textureFormat,
                 false, this.resolveAlgorithm);
             this.compressedTexturePacker.marginPixel = 0;
+
+#if RCTP_DEVMODE
+            Instance = this;
+#endif
         }
 
         /// <summary>
@@ -135,6 +145,29 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return null;
         }
 
+
+        /// <summary>
+        /// Dispose処理
+        /// </summary>
+        public void Dispose()
+        {
+            if (this.fileReadBuffer.IsCreated)
+            {
+                this.fileReadBuffer.Dispose();
+            }
+            if (this.resolveAlgorithm != null)
+            {
+                this.resolveAlgorithm.Dispose();
+            }
+            if (this.compressedTexturePacker != null)
+            {
+                this.compressedTexturePacker.Dispose();
+            }
+#if RCTP_DEVMODE
+            Instance = null;
+#endif
+        }
+
         private void UpdateIfFrameChaged()
         {
             if (Time.frameCount == prevTimeFrameCount)
@@ -142,10 +175,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 return;
             }
             prevTimeFrameCount = Time.frameCount;
-            if (loadQueue.Count <= 0)
-            {
-                return;
-            }
+
             switch (this.state)
             {
                 case EState.None:
@@ -162,6 +192,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         private void LoadRequestFromQueue()
         {
+            if (loadQueue.Count <= 0)
+            {
+                return;
+            }
             RequestFile requestFile;
             this.currentLoadingFile = this.loadQueue.Dequeue();
             if (!this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
@@ -207,8 +241,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
                 var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
                     fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer));
+
                 this.compressedTexturePacker.ApplyToTexture();
-                var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f));
+                var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f),100.0f,0,SpriteMeshType.FullRect);
                 if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
                 {
                     file.sprite = sprite;
@@ -233,15 +268,18 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     minimumOrderValue = requestFile.orderValue;
                 }
             }
-            /*
-            foreach(var kvs in requestedFiles.Keys)
+            keyBuffer.Clear();
+            foreach (var key in requestedFiles.Keys)
             {
-                var key = kvs;
+                keyBuffer.Add(key);
+            }
+            foreach(var key in keyBuffer)
+            {
                 var val = this.requestedFiles[key];
                 val.orderValue = val.orderValue - minimumOrderValue;
                 requestedFiles[key] = val;
             }
-            */
+            this.currentOrderValue -= minimumOrderValue;
         }
 
         private void RemoveOldSprite()
@@ -265,20 +303,30 @@ namespace UTJ.RuntimeCompressedTexturePacker
             SortOutOrderNumber();
         }
 
-        public void Dispose()
+
+
+#if RCTP_DEVMODE
+        public uint CurrentOder => currentOrderValue;
+        public string CurrentFile => currentLoadingFile;
+        public List<string> LoadingQueue => this.loadQueue.ToList();
+
+        public int State => (int)this.state;
+
+        public ReadStatus readStatus => this.readHandle.Status;
+
+        public List<string> RequestedFiles => this.requestedFiles.Keys.ToList();
+
+        public Vector2Int Grid => new Vector2Int(this.actualGridWidth, this.actualGridHeight);
+
+        public uint GetOrderValueInRequestFile(string file)
         {
-            if (this.fileReadBuffer.IsCreated)
+            RequestFile request;
+            if (this.requestedFiles.TryGetValue(file, out request))
             {
-                this.fileReadBuffer.Dispose();
+                return request.orderValue;
             }
-            if (this.resolveAlgorithm != null)
-            {
-                this.resolveAlgorithm.Dispose();
-            }
-            if (this.compressedTexturePacker != null)
-            {
-                this.compressedTexturePacker.Dispose();
-            }
+            return uint.MaxValue;
         }
+#endif
     }
 }
