@@ -28,6 +28,8 @@ namespace UTJ.Sample
 
         private ListItemContainer<IconItemComponent> iconItemsContainer;
 
+
+        private const string LoadingIconName = "icon_loading";
         private string[] iconPaths;
         private string loadingIconPath;
 
@@ -41,6 +43,7 @@ namespace UTJ.Sample
             {
                 iconPaths[i] = GetAssetPath(iconNames[i], "astc/icon/", "_4x4.astc");
             }
+            this.loadingIconPath = GetAssetPath(LoadingIconName, "astc/icon/", "_4x4.astc");
 
             this.recycleAtlasForFixed = new RecycleAtlasForFixedSizeImages(1024, 1024, TextureFormat.ASTC_4x4, 256, 256);
 
@@ -59,7 +62,7 @@ namespace UTJ.Sample
 
         private void OnSetupItem( IconItemComponent item , int index)
         {
-            item.SetupInfo(this.recycleAtlasForFixed, this.iconPaths[index]);
+            item.SetupInfo(this.recycleAtlasForFixed, this.iconPaths[index],this.loadingIconPath);
         }
 
         private void OnDestroy()

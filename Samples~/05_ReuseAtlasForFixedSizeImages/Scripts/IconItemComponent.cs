@@ -19,6 +19,12 @@ namespace UTJ.Sample
         private Image imageBody;
 
         /// <summary>
+        /// Sprit表示のImageオブジェクト
+        /// </summary>
+        [SerializeField]
+        private Image loadingImage;
+
+        /// <summary>
         /// テキスト
         /// </summary>
         [SerializeField]
@@ -26,14 +32,17 @@ namespace UTJ.Sample
 
         // IconPath        
         private string iconPath;
+        // IconPath        
+        private string loadingIconPath;
 
         // Atlas生成用
         private RecycleAtlasForFixedSizeImages recycleAtlasForFixedSizeImages;
 
         // セットアップを行います
-        public void SetupInfo(RecycleAtlasForFixedSizeImages recycleAtlas,string path)
+        public void SetupInfo(RecycleAtlasForFixedSizeImages recycleAtlas,string icon,string loadingIcon)
         {
-            this.iconPath = path;
+            this.iconPath = icon;
+            this.loadingIconPath = loadingIcon;
             this.recycleAtlasForFixedSizeImages = recycleAtlas;
         }
 
@@ -43,7 +52,14 @@ namespace UTJ.Sample
             {
                 return;
             }
-            this.imageBody.sprite = this.recycleAtlasForFixedSizeImages.Request(this.iconPath);
+            this.loadingImage.sprite = this.recycleAtlasForFixedSizeImages.Request(this.loadingIconPath);
+            var imageSprite = this.recycleAtlasForFixedSizeImages.Request(this.iconPath);
+            this.imageBody.sprite = imageSprite;
+
+            this.loadingImage.rectTransform.localRotation = Quaternion.Euler(0, 0, Time.timeSinceLevelLoad * 360.0f);
+
+            this.loadingImage.enabled = (imageSprite == null);
+
         }
 
 #if UNITY_EDITOR

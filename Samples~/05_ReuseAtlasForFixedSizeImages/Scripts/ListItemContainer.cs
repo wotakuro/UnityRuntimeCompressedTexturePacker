@@ -73,7 +73,7 @@ namespace UTJ.Sample
 
             this.scrollRect.onValueChanged.AddListener(OnScrollChanged);
 
-            int bufferNum = (int)(scrollRectTransform.rect.height / itemHeight) + 1;
+            int bufferNum = (int)(scrollRectTransform.rect.height / itemHeight) + 2;
             this.bufferedObject = new List<InstatntiateObject>(bufferNum);
             for (int i = 0; i < bufferNum; i++)
             {
@@ -81,6 +81,7 @@ namespace UTJ.Sample
                 var gmo = GameObject.Instantiate(itemPrefab);
                 var rectTransform = gmo.GetComponent<RectTransform>();
                 rectTransform.SetParent(this.scrollRect.content);
+                rectTransform.localScale = Vector3.one;
                 rectTransform.localPosition = new Vector3(20, - marginTop - i * itemHeight, 0.0f);
 
                 var obj = new InstatntiateObject()

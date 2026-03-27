@@ -37,7 +37,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         // 現在の順番
         private uint currentOrderValue;
 
-        /// ロードのキュー
+        /// リクエストされたファイル一覧
         private Dictionary<string, RequestFile> requestedFiles = new Dictionary<string, RequestFile>();
 
         /// ロードのキュー
