@@ -91,7 +91,3 @@ private void OnFailedLoadFile(string file, int width, int height)
     Debug.LogError("Failed LoadFile " + file + "::" + width + "x" + height);
 }
 ```
-
-## パッケージ同梱サンプル
-本パッケージには実行できるサンプルが複数同梱されています。<br />
-[詳細はコチラ](Samples.ja.md)

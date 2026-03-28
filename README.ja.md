@@ -96,3 +96,10 @@ private void OnFailedLoadFile(string file, int width, int height)
 ```
 
 ### 大量のアイコンをスクロールビューに表示するとき等、沢山のSpriteを入れ替えながら同じAtlasを利用するサンプル
+
+
+
+
+## パッケージ同梱サンプル
+本パッケージには実行できるサンプルが複数同梱されています。<br />
+[詳細はコチラ](Samples.ja.md)
