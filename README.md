@@ -1,5 +1,5 @@
-# UnityRuntimeCompressedTexturePacker
-[“ú–{Œê‚ÍƒRƒ`ƒ‰](README.ja.md)
+ï»¿# UnityRuntimeCompressedTexturePacker
+[æ—¥æœ¬èªã¯ã‚³ãƒãƒ©](README.ja.md)
 
 A Unity runtime utility that dynamically packs compressed textures  to atlases to optimize VRAM and draw calls.
 
