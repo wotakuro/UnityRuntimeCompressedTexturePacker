@@ -5,6 +5,7 @@ using Unity.Collections;
 using UnityEngine;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
+using NUnit.Framework;
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -23,9 +24,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public delegate void TexturePackingError(string file, int width, int height);
 
         /// <summary>
-        /// 
+        /// ロード完了時の関数
         /// </summary>
-        /// <param name="loadSprites"></param>
+        /// <param name="loadSprites">ロードされたスプライト一覧</param>
         public delegate void LoadingComplete(IEnumerable<Sprite> loadSprites);
 
         /// ファイル名とスプライトの対応表
@@ -42,6 +43,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         /// AsyncRead時などでのファイルリストバッファ
         private List<string> readFileListBuffer;
+
+        /// ロードプロセス中？
+        private bool isOnLoadingProcess = false;
 
 
         /// <summary>
@@ -110,6 +114,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         onFailedFile(file, 0, 0);
                     }
+                    this.generatedSpritesBuffer.Add(null);
                     continue;
                 }
                 if (!fileReadBuffer.IsCreated)
@@ -131,14 +136,78 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 CreateSprite(file, fileReadBuffer, onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
-            if (onComplete != null)
-            {
-                onComplete(generatedSpritesBuffer);
-            }
             if (fileReadBuffer.IsCreated)
             {
                 fileReadBuffer.Dispose();
             }
+            this.ExecuteAfterLoadEnd();
+            if (onComplete != null)
+            {
+                onComplete(generatedSpritesBuffer);
+            }
+        }
+
+
+
+        /// <summary>
+        /// 非同期ロード処理
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="onComplete"></param>
+        /// <param name="onFailedFile"></param>
+        /// <returns></returns>
+        public async Awaitable<List<Sprite>> LoadAndPackAsync(IEnumerable<string> files, 
+            LoadingComplete onComplete = null,
+            TexturePackingError onFailedFile = null)
+        {
+            InitBeforeLoadStart(files, true);
+            foreach (var file in this.readFileListBuffer)
+            {
+                // 既に登録済みファイル
+                if (this.generatedSpriteByFile.TryGetValue(file, out Sprite sprite))
+                {
+                    this.generatedSpritesBuffer.Add(sprite);
+                    continue;
+                }
+                long fileSize = UnsafeFileReadUtility.GetFileSize(file);
+                if (fileSize <= 0)
+                {
+                    if (onFailedFile != null)
+                    {
+                        onFailedFile(file, 0, 0);
+                    }
+                    this.generatedSpritesBuffer.Add(null);
+                    continue;
+                }
+                if (!fileReadBuffer.IsCreated)
+                {
+                    fileReadBuffer = new NativeArray<byte>((int)fileSize, Allocator.Persistent);
+                }
+                else if (fileReadBuffer.Length < fileSize)
+                {
+                    fileReadBuffer.Dispose();
+                    fileReadBuffer = new NativeArray<byte>((int)fileSize, Allocator.Persistent);
+                }
+
+
+                var readHandle = UnsafeFileReadUtility.RequestLoad(file, fileReadBuffer, fileSize);
+                while (!readHandle.JobHandle.IsCompleted)
+                {
+                    await Awaitable.NextFrameAsync();
+                }
+                CreateSprite(file, fileReadBuffer, onFailedFile);
+            }
+            compressedTexturePacker.ApplyToTexture();
+            if (fileReadBuffer.IsCreated)
+            {
+                fileReadBuffer.Dispose();
+            }
+            this.ExecuteAfterLoadEnd();
+            if (onComplete != null)
+            {
+                onComplete(generatedSpritesBuffer);
+            }
+            return generatedSpritesBuffer;
         }
 
         /// <summary>
@@ -162,8 +231,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="files">対象ファイル</param>
         /// <param name="onComplete">完了時の呼び出し処理</param>
         /// <param name="onFailedFile">失敗時の呼び出し</param>
-        public void LoadAndPack(IEnumerable<string> files, LoadingComplete onComplete,
-            TexturePackingError onFailedFile)
+        public List<Sprite> LoadAndPack(IEnumerable<string> files, LoadingComplete onComplete = null,
+            TexturePackingError onFailedFile = null)
         {
             InitBeforeLoadStart(files,false);
             NativeArray<long> fileSizes = new NativeArray<long>( files.Count(),Allocator.Temp);
@@ -195,7 +264,16 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     }
                     if (fileSizes[idx] > 0)
                     {
-                        UnsafeFileReadUtility.LoadFileSync(file, buffer, fileSizes[idx]);
+                        long bytes = UnsafeFileReadUtility.LoadFileSync(file, buffer, fileSizes[idx]);
+                        if(bytes <= 0)
+                        {
+                            if (onFailedFile != null)
+                            {
+                                onFailedFile(file, 0, 0);
+                            }
+                            this.generatedSpritesBuffer.Add(null);
+                            continue;
+                        }
                         var name = Path.GetFileNameWithoutExtension(file);
                         CreateSprite(file, buffer, onFailedFile);
                     }
@@ -203,10 +281,12 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
             }
             compressedTexturePacker.ApplyToTexture();
+            this.ExecuteAfterLoadEnd();
             if (onComplete != null)
             {
                 onComplete(generatedSpritesBuffer);
             }
+            return this.generatedSpritesBuffer;
         }
 
         /// <summary>
@@ -236,6 +316,16 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     this.readFileListBuffer.Add(file);
                 }
             }
+
+            this.isOnLoadingProcess = true;
+        }
+
+        /// <summary>
+        /// ロード完了後に処理
+        /// </summary>
+        private void ExecuteAfterLoadEnd()
+        {
+            this.isOnLoadingProcess = false;
         }
 
         /// <summary>
@@ -254,6 +344,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     onFailedFile(file, -1, -1);
                 }
+                this.generatedSpritesBuffer.Add(null);
                 return null;
             }
             // format Check
@@ -263,6 +354,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     onFailedFile(file, texture.width, texture.height);
                 }
+                this.generatedSpritesBuffer.Add(null);
                 return null;
             }
 
@@ -277,6 +369,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         onFailedFile(file, textureFile.width, textureFile.height);
                     }
+                    this.generatedSpritesBuffer.Add(null);
                 }
                 else
                 {

@@ -2,7 +2,7 @@
     "name": "com.utj.runtimecomptexturepacker",
     "displayName": "Runtime Compressed Texture Packer",
     "description": "Unity runtime utility that dynamically packs compressed textures  to atlases to optimize VRAM and draw calls.(currently .astc only support)",
-    "version": "0.1.0",
+    "version": "0.9.0",
     "unity": "6000.0",
 
     "samples": [
@@ -13,7 +13,7 @@
         },
         {
             "displayName": "01_SingleTextureLoad",
-            "description": "This is a sample that directly loads the astc files located under StreamingAssets.",
+            "description": "This is a sample that directly loads the astc,ktx,dds files located under StreamingAssets.",
             "path": "Samples~/01_SingleTextureLoad"
         },
         {
@@ -28,12 +28,12 @@
         },
         {
             "displayName": "04_IncrementalAtlasGeneration",
-            "description": "This is a sample that automatically creates Atlas Textures and Sprites by loading multiple ASTC files placed under the StreamingAssets folder.",
+            "description": "This sample performs a similar task to \"03_AutoAtlasGenerate.\" The difference is that it generates the atlas in stages, allowing you to see the atlas generation process.",
             "path": "Samples~/04_IncrementalAtlasGeneration"
         },
         {
             "displayName": "05_ReuseAtlasForFixedSizeImages",
-            "description": ".",
+            "description": "This sample demonstrates a feature for displaying a large number of icons in a scroll view or similar component.When loaded icon sprites do not fit into the atlas, older sprites are automatically discarded using the LRU (Least Recently Used) algorithm.",
             "path": "Samples~/05_ReuseAtlasForFixedSizeImages"
         }
     ]

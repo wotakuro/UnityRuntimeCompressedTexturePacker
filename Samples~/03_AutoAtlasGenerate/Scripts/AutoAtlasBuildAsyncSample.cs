@@ -134,15 +134,30 @@ namespace UTJ.Sample
         /// <summary>
         /// 非同期ロードの開始
         /// </summary>
-        public void AsyncLoadStart()
+        public async void AsyncLoadStart()
         {
             this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, targetTextureFormat);
             var loadFiles = targetTextureFiles;
             // ランダム順にして実験したい場合
             //var randomOrder = loadFiles.OrderBy(x => System.Guid.NewGuid());
 
-            // コルーチンでLoadAndPackAsyncCoroutine を実行することで非同期読み込みになります
-            this.StartCoroutine(autoAtlasBuilder.LoadAndPackAsyncCoroutine(loadFiles, this.OnCompleteLoadAndPack, OnFailedLoadFile));
+            // 戻り値に読み込んだスプライト一覧が入ります
+            var sprites = await autoAtlasBuilder.LoadAndPackAsync(loadFiles);
+
+
+            this.rawImage.texture = autoAtlasBuilder.texture;
+            foreach (var sprite in sprites)
+            {
+                if(sprite == null)
+                {
+                    continue;
+                }
+                this.AddSpriteToUI(sprite);
+                this.spriteListForDebug.Add(sprite);
+            }
+            this.scrollRect.content.sizeDelta = new Vector2(190.0f, -spritePositionY);
+            this.autoAtlasBuilder.ReleaseBuffers();
+
         }
 
         /// <summary>
@@ -163,32 +178,6 @@ namespace UTJ.Sample
             }
         }
 
-        /// <summary>
-        /// LoadとSprite生成が終わったタイミングで呼び出されます
-        /// </summary>
-        /// <param name="sprites">生成されたSprite</param>
-        private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites)
-        {
-            this.rawImage.texture = autoAtlasBuilder.texture;
-            foreach (var sprite in sprites)
-            {
-                this.AddSpriteToUI(sprite);
-                this.spriteListForDebug.Add(sprite);
-            }
-            this.scrollRect.content.sizeDelta = new Vector2(190.0f, -spritePositionY);
-            this.autoAtlasBuilder.ReleaseBuffers();
-        }
-
-        /// <summary>
-        /// Textureファイル読みこみ失敗、Packing失敗時に呼び出されます
-        /// </summary>
-        /// <param name="file">失敗したファイル</param>
-        /// <param name="width">失敗したTextureの幅</param>
-        /// <param name="height">失敗したTextureの高さ</param>
-        private void OnFailedLoadFile(string file, int width, int height)
-        {
-            Debug.LogError("Failed LoadFile " + file + "::" + width + "x" + height);
-        }
 
 
 
