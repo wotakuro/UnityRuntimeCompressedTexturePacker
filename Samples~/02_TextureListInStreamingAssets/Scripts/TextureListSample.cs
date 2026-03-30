@@ -6,6 +6,7 @@ using UTJ.RuntimeCompressedTexturePacker;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using System.Text;
 
 namespace UTJ.Sample
 {
@@ -14,6 +15,10 @@ namespace UTJ.Sample
     /// </summary>
     public class TextureListSample : MonoBehaviour
     {
+        // 読み込んだTextureを配置するScrollRect
+        [SerializeField]
+        private Text supportTextureInfo;
+
         // 読み込んだTextureを配置するScrollRect
         [SerializeField]
         private ScrollRect scrollRect;
@@ -28,6 +33,8 @@ namespace UTJ.Sample
         // Startメソッド
         void Start()
         {
+            this.SetupSupportTextureFormat();
+
             var files = GetStreamingAssetsFiles();
 
             foreach (var file in files)
@@ -51,6 +58,34 @@ namespace UTJ.Sample
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// サポートしているTextureFormat一覧
+        /// </summary>
+        private void SetupSupportTextureFormat()
+        {
+            if (!this.supportTextureInfo)
+            {
+                return;
+            }
+            var formats = new TextureFormat[]
+            {
+                TextureFormat.DXT1,TextureFormat.DXT5,TextureFormat.BC7,
+                TextureFormat.ETC2_RGB,TextureFormat.ETC2_RGBA1,TextureFormat.ETC2_RGBA8,
+                TextureFormat.ASTC_4x4,TextureFormat.ASTC_5x5,TextureFormat.ASTC_6x6,TextureFormat.ASTC_8x8,
+                TextureFormat.ASTC_10x10,TextureFormat.ASTC_12x12,
+            };
+            StringBuilder sb = new StringBuilder();
+            sb.Append("SupportFormat:");
+            foreach (var format in formats)
+            {
+                if (TextureFileFormatUtility.IsSupportedTextureFormat(format))
+                {
+                    sb.Append(format).Append(",");
+                }
+            }
+            this.supportTextureInfo.text = sb.ToString();
         }
 
         /// <summary>

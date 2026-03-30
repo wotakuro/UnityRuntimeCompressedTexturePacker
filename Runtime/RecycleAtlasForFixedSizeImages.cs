@@ -246,23 +246,24 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     RemoveOldSprite();
                 }
-                var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
-                    fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer));
-
-                if(rect.width <= 0 || rect.height <= 0)
+                using (var textureBodyData = fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer))
                 {
-                    Debug.LogError("Failed Add data " + currentLoadingFile);
+                    var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
+                        textureBodyData);
+                    if (rect.width <= 0 || rect.height <= 0)
+                    {
+                        Debug.LogError("Failed Add data " + currentLoadingFile);
+                    }
+                    this.compressedTexturePacker.ApplyToTexture();
+                    var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
+                    if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
+                    {
+                        file.sprite = sprite;
+                        this.requestedFiles[currentLoadingFile] = file;
+                    }
+                    this.currentLoadingFile = "";
+                    this.state = EState.None;
                 }
-
-                this.compressedTexturePacker.ApplyToTexture();
-                var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f),100.0f,0,SpriteMeshType.FullRect);
-                if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
-                {
-                    file.sprite = sprite;
-                    this.requestedFiles[currentLoadingFile] = file;
-                }
-                this.currentLoadingFile = "";
-                this.state = EState.None;
             }
             else if (readHandle.Status == ReadStatus.Failed || readHandle.Status == ReadStatus.Canceled || readHandle.Status == ReadStatus.Truncated)
             {

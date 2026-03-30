@@ -360,7 +360,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
             var name = Path.GetFileNameWithoutExtension(file);
 
-            var textureBodyData = textureFile.GeImageDataWithoutMipmap(fileDataBuffer);
+            using (var textureBodyData = textureFile.GeImageDataWithoutMipmap(fileDataBuffer)) 
             {
                 var rect = compressedTexturePacker.AppendTextureData(textureFile.width, textureFile.height, textureBodyData);
                 if (rect.width <= 0 || rect.height <= 0)
@@ -374,7 +374,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 else
                 {
                     var texture2d = compressedTexturePacker.texture2D;
-                    var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f),100.0f,0,SpriteMeshType.FullRect);
+                    var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
                     sprite.name = name;
                     this.generatedSpritesBuffer.Add(sprite);
                     this.generatedSpriteByFile.Add(file, sprite);
