@@ -1,5 +1,6 @@
 ﻿# UnityRuntimeCompressedTexturePacker
 A utility for the Unity runtime that dynamically generates packed atlases from compressed textures to optimize VRAM and DrawCalls.
+[日本語はコチラ](README.ja.md)
 
 ## Supported Files
 - astc (ASTC_4x4, ASTC_5x5, ASTC_6x6, ASTC_8x8, ASTC_10x10, ASTC_12x12)
