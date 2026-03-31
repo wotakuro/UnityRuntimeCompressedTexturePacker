@@ -21,6 +21,9 @@ namespace UTJ.Sample
         [SerializeField]
         private RawImage buildAtlasImage;
 
+        // TextureFormatの所
+        [SerializeField]
+        private Text textureFormatInfo;
 
         private RecycleAtlasForFixedSizeImages recycleAtlasForFixed;
 
@@ -73,6 +76,11 @@ namespace UTJ.Sample
 
             this.iconItemsContainer = new ListItemContainer<IconItemComponent>();
             this.iconItemsContainer.Setup(itemPrefab, scrollRect, iconPaths.Length, 160, 10, this.OnSetupItem);
+
+            if (textureFormatInfo)
+            {
+                textureFormatInfo.text = "AtlasTexture "+ textureFormat.ToString();
+            }
 
         }
 

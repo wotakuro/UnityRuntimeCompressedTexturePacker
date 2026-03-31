@@ -1,13 +1,14 @@
-﻿using System.Collections;
+﻿#if (!UNITY_EDITOR &&  UNITY_WEBGL )
+#define WEB_RUNTIME_BUILD 
+#endif
+
 using System.Collections.Generic;
-using System.IO;
 using Unity.Collections;
 using UnityEngine;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
 using Unity.IO.LowLevel.Unsafe;
-using UnityEngine.Profiling;
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -27,8 +28,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
             Loading,
         }
         // リクエストされたファイル
-
-
         private struct RequestFile
         {
             public string file;
@@ -100,8 +99,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
             this.resolveAlgorithm = new GridMapPacking(actualGridWidth, actualGridHeight);
             this.compressedTexturePacker = new CompressedTexturePacker(width, height, textureFormat,
-                false, this.resolveAlgorithm);
-            this.compressedTexturePacker.marginPixel = 0;
+                false, this.resolveAlgorithm,0);
 
 #if RCTP_DEVMODE
             Instance = this;
@@ -241,6 +239,17 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
                 ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
                 fileFormat.LoadHeader(this.fileReadBuffer);
+
+                // fileformat check
+                if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
+                {
+#if DEBUG
+                    Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
+#endif
+                    this.currentLoadingFile = "";
+                    this.state = EState.None;
+                    return;
+                }
 
                 if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
                 {

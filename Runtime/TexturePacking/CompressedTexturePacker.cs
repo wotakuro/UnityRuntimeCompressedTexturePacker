@@ -36,7 +36,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <summary>
         /// マージンをいれるピクセル
         /// </summary>
-        public int marginPixel { get; set; } = 1;
+        public int marginPixel { get;private set; } = 1;
 
         /// <summary>
         /// 内部で生成したTexture
@@ -53,7 +53,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public CompressedTexturePacker(int width, int height, TextureFormat textureFormat)
         {
             Initialize( width, height, textureFormat, false,
-                new UTJ.RuntimeCompressedTexturePacker.Packing.MaximalRectanglesPacking());
+                new UTJ.RuntimeCompressedTexturePacker.Packing.MaximalRectanglesPacking(),1);
         }
 
         /// <summary>
@@ -63,9 +63,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="height">Packing Textureの幅</param>
         /// <param name="textureFormat">パッキングされるTextureのフォーマット</param>
         /// <param name="resolveAlgorithm">生成に利用するアルゴリズム</param>
-        public CompressedTexturePacker(int width , int height, TextureFormat textureFormat, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm)
+        /// <param name="margin">マージンピクセル数</param>
+        public CompressedTexturePacker(int width , int height, TextureFormat textureFormat, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm,int margin)
         {
-            Initialize(width,height, textureFormat, isLinearColor,resolveAlgorithm);
+            Initialize(width,height, textureFormat, isLinearColor,resolveAlgorithm , margin);
         }
 
         /// <summary>
@@ -203,7 +204,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="format">パッキングされるTextureのフォーマット</param>
         /// <param name="isLinearColor">リニアカラー</param>
         /// <param name="resolveAlgorithm">生成に利用するアルゴリズム</param>
-        private void Initialize( int width, int height, TextureFormat format, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm)
+        /// <param name="margin">マージンピクセル数</param>
+        private void Initialize( int width, int height, TextureFormat format, bool isLinearColor, IRectResolveAlgorithm resolveAlgorithm,
+            int margin)
         {
             this.textureFormat = format;
             this.textureWidth = width;
@@ -214,6 +217,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.rectResolveAlgorithm = resolveAlgorithm;
             this.rectResolveAlgorithm.Initialize(width, height);
             this.texture2D = new Texture2D(this.textureWidth, this.textureHeight, this.textureFormat, false, isLinearColor);
+            this.marginPixel = margin;
         }
 
 

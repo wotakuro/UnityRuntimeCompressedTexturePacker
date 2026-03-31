@@ -1,11 +1,16 @@
-﻿using System.Collections;
+﻿#if (!UNITY_EDITOR &&  UNITY_WEBGL )
+#define WEB_RUNTIME_BUILD 
+#endif
+
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
 using UnityEngine;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
-using NUnit.Framework;
+using System;
+
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -210,20 +215,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return generatedSpritesBuffer;
         }
 
-        /// <summary>
-        /// Dispose処理
-        /// </summary>
-        public void Dispose()
-        {
-            if (this.compressedTexturePacker != null)
-            {
-                this.compressedTexturePacker.Dispose();
-            }
-            if (fileReadBuffer.IsCreated)
-            {
-                fileReadBuffer.Dispose();
-            }
-        }
+
 
         /// <summary>
         /// ファイル読み込みと同期
@@ -234,6 +226,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public List<Sprite> LoadAndPack(IEnumerable<string> files, LoadingComplete onComplete = null,
             TexturePackingError onFailedFile = null)
         {
+#if UNITY_WEBGL 
+            throw new NotImplementedException("Does not support web runtme");
+#endif
             InitBeforeLoadStart(files,false);
             NativeArray<long> fileSizes = new NativeArray<long>( files.Count(),Allocator.Temp);
             long biggestSize = 0;
@@ -288,7 +283,20 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             return this.generatedSpritesBuffer;
         }
-
+        /// <summary>
+        /// Dispose処理
+        /// </summary>
+        public void Dispose()
+        {
+            if (this.compressedTexturePacker != null)
+            {
+                this.compressedTexturePacker.Dispose();
+            }
+            if (fileReadBuffer.IsCreated)
+            {
+                fileReadBuffer.Dispose();
+            }
+        }
         /// <summary>
         /// ロード開始前の初期化処理
         /// </summary>
@@ -355,6 +363,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     onFailedFile(file, texture.width, texture.height);
                 }
                 this.generatedSpritesBuffer.Add(null);
+#if DEBUG
+                Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + textureFile.textureFormat );
+#endif
                 return null;
             }
 
