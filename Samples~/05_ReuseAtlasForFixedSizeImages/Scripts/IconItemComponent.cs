@@ -32,11 +32,16 @@ namespace UTJ.Sample
         private RecycleAtlasForFixedSizeImages recycleAtlasForFixedSizeImages;
 
         // セットアップを行います
-        public void SetupInfo(RecycleAtlasForFixedSizeImages recycleAtlas,string icon,string loadingIcon)
+        public void BindItem(RecycleAtlasForFixedSizeImages recycleAtlas,string icon,string loadingIcon)
         {
             this.iconPath = icon;
             this.loadingIconPath = loadingIcon;
             this.recycleAtlasForFixedSizeImages = recycleAtlas;
+        }
+
+        public void UnbindItem()
+        {
+            this.iconPath = null;
         }
 
         private void Update()

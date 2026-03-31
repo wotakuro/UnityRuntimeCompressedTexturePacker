@@ -47,27 +47,27 @@ namespace UTJ.Sample
                 textureFormat = TextureFormat.ASTC_4x4;
                 for (int i = 0; i < iconNames.Length; ++i)
                 {
-                    iconPaths[i] = GetAssetPath(iconNames[i], "astc/icon/", "_4x4.astc");
+                    iconPaths[i] = GetAssetPath(iconNames[i], "astc/Icon/", "_4x4.astc");
                 }
-                this.loadingIconPath = GetAssetPath(LoadingIconName, "astc/icon/", "_4x4.astc");
+                this.loadingIconPath = GetAssetPath(LoadingIconName, "astc/Icon/", "_4x4.astc");
             }
             else if (TextureFileFormatUtility.IsSupportedTextureFormat(TextureFormat.ETC2_RGBA8))
             {
                 textureFormat = TextureFormat.ETC2_RGBA8;
                 for (int i = 0; i < iconNames.Length; ++i)
                 {
-                    iconPaths[i] = GetAssetPath(iconNames[i], "ktxEtc2RGBA8/icon/", "_ETC2_RGBA.ktx");
+                    iconPaths[i] = GetAssetPath(iconNames[i], "ktxEtc2RGBA8/Icon/", "_ETC2_RGBA.ktx");
                 }
-                this.loadingIconPath = GetAssetPath(LoadingIconName, "ktxEtc2RGBA8/icon/", "_ETC2_RGBA.ktx");
+                this.loadingIconPath = GetAssetPath(LoadingIconName, "ktxEtc2RGBA8/Icon/", "_ETC2_RGBA.ktx");
             }
             else if (TextureFileFormatUtility.IsSupportedTextureFormat(TextureFormat.BC7))
             {
                 textureFormat = TextureFormat.BC7;
                 for (int i = 0; i < iconNames.Length; ++i)
                 {
-                    iconPaths[i] = GetAssetPath(iconNames[i], "ddsBC7/icon/", "_BC7_UNORM.dds");
+                    iconPaths[i] = GetAssetPath(iconNames[i], "ddsBC7/Icon/", "_BC7_UNORM.dds");
                 }
-                this.loadingIconPath = GetAssetPath(LoadingIconName, "ddsBC7/icon/", "_BC7_UNORM.dds");
+                this.loadingIconPath = GetAssetPath(LoadingIconName, "ddsBC7/Icon/", "_BC7_UNORM.dds");
             }
 
 
@@ -75,7 +75,7 @@ namespace UTJ.Sample
             this.recycleAtlasForFixed = new RecycleAtlasForFixedSizeImages(1024, 1024, textureFormat, 256, 256);
 
             this.iconItemsContainer = new ListItemContainer<IconItemComponent>();
-            this.iconItemsContainer.Setup(itemPrefab, scrollRect, iconPaths.Length, 160, 10, this.OnSetupItem);
+            this.iconItemsContainer.Setup(itemPrefab, scrollRect, iconPaths.Length, 160, 10, this.OnBindItem, this.OnUnbindItem);
 
             if (textureFormatInfo)
             {
@@ -92,9 +92,14 @@ namespace UTJ.Sample
             }
         }
 
-        private void OnSetupItem( IconItemComponent item , int index)
+        private void OnBindItem( IconItemComponent item , int index)
         {
-            item.SetupInfo(this.recycleAtlasForFixed, this.iconPaths[index],this.loadingIconPath);
+            item.BindItem(this.recycleAtlasForFixed, this.iconPaths[index],this.loadingIconPath);
+        }
+
+        private void OnUnbindItem(IconItemComponent item, int index)
+        {
+            item.UnbindItem();
         }
 
         private void OnDestroy()

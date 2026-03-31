@@ -27,6 +27,26 @@ namespace UTJ.Sample
         [SerializeField]
         private RawImage dstImage;
 
+        // Start処理
+        private void Start()
+        {
+            // サポートしているTextureFormatに応じてInputFieldの値を変更しておきます
+            if (inputField)
+            {
+                if (SystemInfo.SupportsTextureFormat(TextureFormat.ASTC_4x4))
+                {
+                    inputField.text = "astc/Banner/banner_beer_4x4.astc";
+                }else if (SystemInfo.SupportsTextureFormat(TextureFormat.ETC2_RGBA8))
+                {
+                    inputField.text = "ktxEtc2RGBA8/Banner/banner_beer_ETC2_RGBA.ktx";
+                }
+                else if (SystemInfo.SupportsTextureFormat(TextureFormat.BC7))
+                {
+                    inputField.text = "ddsBC7/Banner/banner_beer_BC7_UNORM.dds";
+                }
+            }
+        }
+
         /// <summary>
         /// Textureファイルをそのままロードします
         /// </summary>

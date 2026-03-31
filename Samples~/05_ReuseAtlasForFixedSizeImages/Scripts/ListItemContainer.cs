@@ -46,7 +46,11 @@ namespace UTJ.Sample
         // アイテム数
         private int itemNum;
         // アイテムのセットアップ処理
-        private ItemFunc setupItemFunc;
+        private ItemFunc bindItemFunc;
+
+
+        // アイテムのセットアップ処理
+        private ItemFunc unbindItemFunc;
 
 
         /// <summary>
@@ -57,15 +61,16 @@ namespace UTJ.Sample
         /// <param name="num">数</param>
         /// <param name="height"></param>
         /// <param name="topMargin"></param>
-        /// <param name="setupFunc"></param>
+        /// <param name="bindFunc"></param>
         public void Setup(GameObject prefab, ScrollRect scroll, int num,int height,int topMargin,
-            ItemFunc setupFunc) {
+            ItemFunc bindFunc,ItemFunc unbindFunc) {
             this.itemPrefab = prefab;
             this.scrollRect = scroll;
             this.itemNum = num;
             this.marginTop = topMargin;
             this.itemHeight = height;
-            this.setupItemFunc = setupFunc;
+            this.bindItemFunc = bindFunc;
+            this.unbindItemFunc = unbindFunc;
 
 
             this.scrollRectTransform = this.scrollRect.GetComponent<RectTransform>();
@@ -91,7 +96,7 @@ namespace UTJ.Sample
                     itemIndex = i,
                     itemComponent = gmo.GetComponent<T>()
                 };
-                this.setupItemFunc(obj.itemComponent, i);
+                this.bindItemFunc(obj.itemComponent, i);
                 this.bufferedObject.Add(obj);
             }
         }
@@ -118,13 +123,22 @@ namespace UTJ.Sample
             int head = (int)(positionY + marginTop) / itemHeight;
             int tail = (int)(positionY + marginTop + scrollRectTransform.rect.height) / itemHeight;
 
+
+
             // 範囲外のモノを itemIndex -1でマークします
             for (int i = 0; i < this.bufferedObject.Count; i++)
             {
-                if (positionY > -this.bufferedObject[i].rectTransform.localPosition.y + itemHeight ||
-                    positionY < -this.bufferedObject[i].rectTransform.localPosition.y + this.scrollRectTransform.rect.height)
+                var item = this.bufferedObject[i];
+                if(item.itemIndex < 0)
                 {
-                    var item = this.bufferedObject[i];
+                    continue;
+                }
+                if (item.itemIndex < head || tail < item.itemIndex)
+                {
+                    if (this.unbindItemFunc != null)
+                    {
+                        this.unbindItemFunc(item.itemComponent, item.itemIndex);
+                    }
                     item.itemIndex = -1;
                     this.bufferedObject[i] = item;
                 }
@@ -140,7 +154,7 @@ namespace UTJ.Sample
                     {
                         var itemObject = this.bufferedObject[newItemIdx];
                         itemObject.itemIndex = i;
-                        setupItemFunc(itemObject.itemComponent, i);
+                        this.bindItemFunc(itemObject.itemComponent, i);
                         this.bufferedObject[newItemIdx] = itemObject;
                         itemObject.rectTransform.localPosition = new Vector3(20, -10 - i * itemHeight);
                     }
