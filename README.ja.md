@@ -222,4 +222,4 @@ void OnDestroy(){
 
 ## パッケージ同梱サンプル
 本パッケージには実行できるサンプルが複数同梱されています。<br />
-[詳細はコチラ](Samples.ja.md)
+[詳細はコチラ](Documentation~/Samples.ja.md)
