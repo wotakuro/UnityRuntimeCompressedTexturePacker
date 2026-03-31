@@ -41,6 +41,13 @@ Texcov -f BC7_UNORM test.png -nogpu -y -srgi -srgbo -vflip
 ```
 
 ## Sample Code
+### Important Notes
+The supported texture formats vary depending on the runtime platform being used.<br />
+You must use `SystemInfo.SupportsTextureFormat` to verify that the texture atlas you are attempting to create can be generated in the runtime environment.<br/>
+*Note: Since the Editor includes a decompressor, it can load unsupported textures, but this may not be possible in the built app. <br />
+<br />
+[Click here for details](https://docs.unity3d.com/6000.0/Documentation/Manual/texture-choose-format-by-platform.html)
+
 
 ### Loading a Single File (Excluding Web Runtime)
 ```csharp

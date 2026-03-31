@@ -40,6 +40,15 @@ Texcov -f BC7_UNORM test.png -nogpu -y -srgi -srgbo -vflip
 
 ## サンプルコード
 
+### 注意事項
+実行しているランタイムプラットフォームによって、サポートしているTextureフォーマットは異なります。<br />
+SystemInfo.SupportsTextureFormat を利用して、作成しようとしているTextureAtlasが実行環境で作成できるか確認する必要があります。<br />
+※Editor実行時にはDecompressorがあるので、未対応のTextureも読み込むことが出来ますが、ビルドしたアプリでは出来ないケースがあります。<br />
+<br />
+[詳細はコチラ](https://docs.unity3d.com/ja/6000.0/Manual/texture-choose-format-by-platform.html)
+
+
+
 ### 単体のファイルロード( Webランタイム以外)
 ```
 public Texture2D LoadAstcTexture(){
