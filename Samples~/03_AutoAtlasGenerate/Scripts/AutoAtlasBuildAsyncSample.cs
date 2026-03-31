@@ -157,7 +157,6 @@ namespace UTJ.Sample
             }
             this.scrollRect.content.sizeDelta = new Vector2(190.0f, -spritePositionY);
             this.autoAtlasBuilder.ReleaseBuffers();
-
         }
 
         /// <summary>

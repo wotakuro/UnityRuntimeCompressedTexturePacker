@@ -40,16 +40,17 @@ Texcov -f BC7_UNORM test.png -nogpu -y -srgi -srgbo -vflip
 
 ## サンプルコード
 
-### 単体のファイルロード
+### 単体のファイルロード( Webランタイム以外)
 ```
-public Texture2D LoadAstcTexture()
-{
+public Texture2D LoadAstcTexture(){
     string path = System.IO.Path.Combine(Application.streamingAssetsPath, "test.astc");
-
+    // Fileに読み込んだ内容をNativeArray<byte>に格納します
     using( var fileBinary = UnsafeFileReadUtility.LoadFileSync(path, Unity.Collections.Allocator.Temp) ){
-        if (fileBinary.IsCreated)
-        {
+        // ファイル作成時
+        if (fileBinary.IsCreated){
+            // ファイルのバイナリを見て、適切なFileフォーマットオブジェクトを作ってもらいます
             var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+            // 作成したオブジェクトからロードTextureします
             var texture = textureFormatFile.LoadTexture(fileBinary);
             return texture;
         }
@@ -59,45 +60,155 @@ public Texture2D LoadAstcTexture()
 ```
 ### テクスチャファイルのロードとAtlasへのパッキングを行う
 
-#### 同期読み込み
 
 ### asyncでの非同期読み込み
 
-#### Coroutine での非同期読み込み
 ```
-public void AsyncLoadStart()
-{
-    this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, TextureFormat.ASTC_4x4);
+// オブジェクト
+private AutoAtlasBuilder autoAtlasBuilder;
+
+// 非同期ロードスタート
+public async void AsyncLoadStart(){
+    this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, targetTextureFormat);
+    // 読み込みするファイル指定
     string[] loadFiles = {
         System.IO.Path.Combine(Application.streamingAssetsPath, "test1.astc"),
         System.IO.Path.Combine(Application.streamingAssetsPath, "test2.astc"),
     };
+    // 戻り値に読み込んだスプライト一覧が入ります
+    var sprites = await autoAtlasBuilder.LoadAndPackAsync(loadFiles);
+    foreach (var sprite in sprites){
+        // 読み込み失敗はNullが入ります
+        if(sprite == null){
+            continue;
+        }
+        // spriteに対して何かします
+    }
+    this.autoAtlasBuilder.ReleaseBuffers();
+}
+// 破棄された時にはDisposeしてください
+void OnDestroy(){
+    this.autoAtlasBuilder.Dispose();
+}
+```
+
+
+#### 同期読み込み（Webはサポートもしません※まだWebは全て非対応)
+
+```
+// オブジェクト
+private AutoAtlasBuilder autoAtlasBuilder;
+
+// 処理する部分
+public void LoadAndPack(){
+    this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, targetTextureFormat);
+    // 読み込みするファイル指定
+    string[] loadFiles = {
+        System.IO.Path.Combine(Application.streamingAssetsPath, "test1.astc"),
+        System.IO.Path.Combine(Application.streamingAssetsPath, "test2.astc"),
+    };
+    // 戻り値に読み込んだスプライト一覧が入ります
+    var sprites = autoAtlasBuilder.LoadAndPack(loadFiles);
+    foreach (var sprite in sprites){
+        // 読み込み失敗はNullが入ります
+        if(sprite == null){
+            continue;
+        }
+        // spriteに対して何かします
+    }
+    // 追加でTextureをパッキングする必要がないなら、ファイル読み込み用のバッファをクリアします。
+    this.autoAtlasBuilder.ReleaseBuffers();
+}
+// 破棄された時にはDisposeしてください
+void OnDestroy(){
+    this.autoAtlasBuilder.Dispose();
+}
+```
+
+#### Coroutine での非同期読み込み
+```
+// Atlas作成用のオブジェクト
+private AutoAtlasBuilder autoAtlasBuilder;
+
+// コルーチンでの非同期読み込みスタート
+public void AsyncLoadStart(){
+    // Atlasテクスチャのサイズとフォーマットを指定します。
+    this.autoAtlasBuilder = new AutoAtlasBuilder(1024, 1024, TextureFormat.ASTC_4x4);
+    // 読み込みするファイル指定
+    string[] loadFiles = {
+        System.IO.Path.Combine(Application.streamingAssetsPath, "test1.astc"),
+        System.IO.Path.Combine(Application.streamingAssetsPath, "test2.astc"),
+    };
+    // LoadAndPackAsyncCoroutineの戻り値でコルーチン開始します
     this.StartCoroutine(autoAtlasBuilder.LoadAndPackAsyncCoroutine(loadFiles, this.OnCompleteLoadAndPack, OnFailedLoadFile));
 }
 
-// callback when the loading and packing process is completed
-private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites)
-{
+// パッキング完了時のコールバック
+private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites){
     var texture = autoAtlasBuilder.texture;
-    foreach (var sprite in sprites)
-    {
-       // something to do for generated sprite
+    foreach (var sprite in sprites){
+        // 読み込み失敗はNullが入ります
+        if(sprite == null){
+            continue;
+        }
+       // spriteに何かします
     }
-    // if you don't need to append textures. reelase buffers.
+    // 追加でTextureをパッキングする必要がないなら、ファイル読み込み用のバッファをクリアします。
     this.autoAtlasBuilder.ReleaseBuffers();
 }
 
-// callback when the load failed or packing failed
-// if loading file is failed the width and height will be negative value.
-private void OnFailedLoadFile(string file, int width, int height)
-{
+// ファイル読み込み失敗時の処理
+private void OnFailedLoadFile(string file, int width, int height){
     Debug.LogError("Failed LoadFile " + file + "::" + width + "x" + height);
+}
+
+// 破棄された時にはDisposeしてください
+void OnDestroy(){
+    this.autoAtlasBuilder.Dispose();
 }
 ```
 
 ### 大量のアイコンをスクロールビューに表示するとき等、沢山のSpriteを入れ替えながら同じAtlasを利用するサンプル
 
+```
+// アトラスなどを管理するオブジェクト
+private RecycleAtlasForFixedSizeImages recycleAtlasForFixed;
 
+// 読み込み対象のアイコンファイル一覧
+private List<string> iconFiles{
+    get{
+        var iconFiles = new List<string>();
+        for(int i = 0; i < 50; ++i){
+            iconFiles.Add( System.IO.Path.Combine(Application.streamingAssetsPath,string.Format("icon{0:000}.astc", i) ) );
+        }
+        return iconNames;
+    }
+}
+// 読み込みが必要なアイコン
+private int index = 0;
+
+// 初期化時
+void Awake(){
+    // テクスチャーAtlasのサイズ、フォーマット、そして読み込むアイコンのサイズを指定してオブジェクトを作成します
+    this.recycleAtlasForFixed = new RecycleAtlasForFixedSizeImages(1024, 1024, textureFormat, 256, 256);
+}
+
+// 更新処理
+void Update(){
+   var icons = iconFiles;
+   for(int i = index ; i < index + 5 && icons.Count; ++ i ){
+       // 毎フレーム、ファイルパスを渡してリクエストして下さい。
+       // Atlasがいっぱいになった場合、リクエストが古いものから破棄していきます。
+       // ファイルに対応したSpriteが作られていればファイルを作ります。nullが返されれば、ロード中のものです。
+       var sprite = this.recycleAtlasForFixedSizeImages.Request( icons[i] );
+   }
+}
+
+// 破棄された時にはDisposeしてください
+void OnDestroy(){
+  recycleAtlasForFixed.Dipose();
+}
+```
 
 
 ## パッケージ同梱サンプル

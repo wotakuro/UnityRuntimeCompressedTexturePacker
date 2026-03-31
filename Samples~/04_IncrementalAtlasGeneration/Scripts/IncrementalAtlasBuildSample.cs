@@ -156,8 +156,11 @@ namespace UTJ.Sample
             foreach (var file in loadFiles)
             {
                 currentTargetFile[0] = file;
-                this.autoAtlasBuilder.LoadAndPack(currentTargetFile, this.OnCompleteLoadAndPack, this.OnFailedLoadFile);
-           
+                var enumerator = this.autoAtlasBuilder.LoadAndPackAsyncCoroutine(currentTargetFile, this.OnCompleteLoadAndPack, this.OnFailedLoadFile);
+                while (enumerator.MoveNext())
+                {
+                    yield return null;
+                }
                 yield return new WaitForSeconds(1.0f);
             }
             this.autoAtlasBuilder.ReleaseBuffers();
