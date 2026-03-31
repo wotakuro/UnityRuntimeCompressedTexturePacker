@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using Unity.Collections;
+using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using UTJ.RuntimeCompressedTexturePacker;
 using UTJ.RuntimeCompressedTexturePacker.Format;
@@ -46,7 +48,50 @@ namespace UTJ.Sample
                 }
             }
         }
+#if UNITY_WEBGL
+        /// <summary>
+        /// Textureファイルをそのままロードします
+        /// </summary>
+        public async void LoadAstcTexture()
+        {
+            string path = System.IO.Path.Combine(Application.streamingAssetsPath, inputField.text);
+ 
+            using (UnityWebRequest request = UnityWebRequest.Get(path))
+            {
+                // リクエストを送信
+                var operation = request.SendWebRequest();
 
+                while (!operation.isDone)
+                {
+                    await Awaitable.NextFrameAsync();
+                }
+
+                // エラーハンドリング
+                if (request.result == UnityWebRequest.Result.ConnectionError ||
+                    request.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    dstImage.texture = null;
+                    return;
+                }
+                using (var fileBinary = UnsafeFileReadUtility.GetDataFromWebRequest(request, Allocator.Temp))
+                {
+                    var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+
+                    var texture = textureFormatFile.LoadTexture(fileBinary);
+                    dstImage.texture = texture;
+                    if (texture)
+                    {
+                        this.AdjustImageSize();
+                    }
+                    else
+                    {
+                        Debug.LogError("Not support file " + inputField.text);
+                    }
+                }
+            }
+        }
+
+#else
         /// <summary>
         /// Textureファイルをそのままロードします
         /// </summary>
@@ -77,6 +122,7 @@ namespace UTJ.Sample
                 }
             }
         }
+#endif
 
         /// <summary>
         /// ImageオブジェクトをTextureサイズに合わせます

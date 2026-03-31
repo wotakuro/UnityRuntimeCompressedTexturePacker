@@ -134,6 +134,27 @@ namespace UTJ.Sample
         // 生成したSpriteを配置する場所
         private float spritePositionY = -5;
 
+
+        // Awake時にTextureFormatサポート状況を見て Dropdownの値を決めます
+        private void Awake()
+        {
+            if (textureTypeDropdown)
+            {
+                if (SystemInfo.SupportsTextureFormat(TextureFormat.ASTC_4x4))
+                {
+                    textureTypeDropdown.value = 0;
+                }
+                else if (SystemInfo.SupportsTextureFormat(TextureFormat.ETC2_RGBA8))
+                {
+                    textureTypeDropdown.value = 1;
+                }
+                else if (SystemInfo.SupportsTextureFormat(TextureFormat.BC7))
+                {
+                    textureTypeDropdown.value = 2;
+                }
+            }
+        }
+
         /// <summary>
         /// 非同期ロードの開始
         /// </summary>

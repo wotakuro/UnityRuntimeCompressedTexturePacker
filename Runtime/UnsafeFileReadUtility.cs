@@ -4,6 +4,7 @@ using Unity.Collections.LowLevel.Unsafe;
 
 using UnityEngine;
 using System;
+using UnityEngine.Networking;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -76,12 +77,39 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="buffer">読み込んだデータが入るBuffer</param>
         /// <param name="fileSize">ファイルサイズ</param>
         /// <returns>読み込んだサイズ</returns>
-        public static long LoadFileSync(string path,NativeArray<byte> buffer, long fileSize)
+        public static long LoadFileSync(string path, NativeArray<byte> buffer, long fileSize)
         {
             var handle = RequestLoad(path, buffer, fileSize);
             handle.JobHandle.Complete();
             return handle.GetBytesRead();
         }
+
+        public static NativeArray<byte> GetDataFromWebRequest(UnityWebRequest request,Allocator allocator)
+        {
+            var src = request.downloadHandler.nativeData;
+            var data = new NativeArray<byte>(src.Length, allocator);
+            NativeArray<byte>.Copy(src, data, src.Length);
+            return data;
+        }
+
+        public static int GetDataSizeFromWebRequest(UnityWebRequest request)
+        {
+            return request.downloadHandler.nativeData.Length;
+        }
+
+
+        public static int GetDataFromWebRequest(UnityWebRequest request, NativeArray<byte> dest)
+        {
+            var src = request.downloadHandler.nativeData;
+            int size = src.Length;
+            if(size > dest.Length)
+            {
+                size = dest.Length;
+            }
+            NativeArray<byte>.Copy(src, dest, size);
+            return size;
+        }
+
 
     }
 }

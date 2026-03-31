@@ -31,7 +31,7 @@ namespace UTJ.Sample
         private int appendTextureNum = 0;
 
         // Startメソッド
-        void Start()
+        private void Start()
         {
             this.SetupSupportTextureFormat();
 

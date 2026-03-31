@@ -68,6 +68,26 @@ namespace UTJ.Sample
             "Sprites/Sprite_TomatoSauce",
         };
 
+        // Awake時にTextureFormatサポート状況を見て Dropdownの値を決めます
+        private void Awake()
+        {
+            if (textureTypeDropdown)
+            {
+                if (SystemInfo.SupportsTextureFormat(TextureFormat.ASTC_4x4))
+                {
+                    textureTypeDropdown.value = 0;
+                }
+                else if (SystemInfo.SupportsTextureFormat(TextureFormat.ETC2_RGBA8))
+                {
+                    textureTypeDropdown.value = 1;
+                }
+                else if (SystemInfo.SupportsTextureFormat(TextureFormat.BC7))
+                {
+                    textureTypeDropdown.value = 2;
+                }
+            }
+        }
+
         /// <summary>
         /// Dropdownを考慮して、実際に読み込むTextureファイル
         /// </summary>
