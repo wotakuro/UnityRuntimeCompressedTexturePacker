@@ -9,6 +9,7 @@ using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
 using Unity.IO.LowLevel.Unsafe;
+using UnityEngine.Networking;
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -48,8 +49,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private List<string> keyBuffer = new List<string>();
         // 一個前に実行したときのTime.frameCount
         private int prevTimeFrameCount = 0;
+#if UNITY_WEBGL
+        // WebRequest
+        private UnityWebRequest webRequest;
+
+        private UnityWebRequestAsyncOperation webRequestAsync;
+#else
         // ReadHandle
         private ReadHandle readHandle;
+#endif
 
         // 現在ロード中のファイル
         private string currentLoadingFile;
@@ -123,6 +131,16 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 UpdateIfFrameChaged();
                 return requestFile.sprite;
             }
+#if UNITY_WEBGL
+            requestFile = new RequestFile()
+            {
+                file = path,
+                orderValue = currentOrderValue,
+                sprite = null,
+                fileSize = 0
+            };
+
+#else
             requestFile = new RequestFile()
             {
                 file = path,
@@ -135,6 +153,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 Debug.LogWarning("FileSize zero " + path);
                 return null;
             }
+#endif
             this.requestedFiles.Add(path, requestFile);
             this.loadQueue.Enqueue(path);
 
@@ -161,6 +180,14 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 this.compressedTexturePacker.Dispose();
             }
+#if UNITY_WEBGL
+            if(this.webRequest != null)
+            {
+                this.webRequest.Dispose();
+                this.webRequest = null;
+            }
+#endif
+
 #if RCTP_DEVMODE
             Instance = null;
 #endif
@@ -168,11 +195,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         private void UpdateIfFrameChaged()
         {
-            if (Time.frameCount == prevTimeFrameCount)
+            if (Time.frameCount == this.prevTimeFrameCount)
             {
                 return;
             }
-            prevTimeFrameCount = Time.frameCount;
+            this.prevTimeFrameCount = Time.frameCount;
+            if(this.currentOrderValue > uint.MaxValue /2)
+            {
+                this.SortOutOrderNumber();
+            }
 
             switch (this.state)
             {
@@ -184,7 +215,133 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     break;
             }
         }
+#if UNITY_WEBGL
+        /// <summary>
+        /// Queueにあるものから、ロードをリクエストします
+        /// </summary>
+        private void LoadRequestFromQueue()
+        {
+            if (loadQueue.Count <= 0)
+            {
+                return;
+            }
+            RequestFile requestFile;
+            this.currentLoadingFile = this.loadQueue.Dequeue();
+            if (!this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
+            {
+                return;
+            }
+            if (requestFile.sprite != null)
+            {
+                return;
+            }
+            if (this.webRequest != null)
+            {
+                this.webRequest.Dispose();
+                this.webRequest = null;
+            }
+            this.webRequest = UnityWebRequest.Get(requestFile.file);
+            this.webRequestAsync = this.webRequest.SendWebRequest();
+//            this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.fileReadBuffer, requestFile.fileSize);
+            this.state = EState.Loading;
+            if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
+            {
+                RemoveOldSprite();
+            }
 
+        }
+
+        /// <summary>
+        /// ロードの待ち中の処理
+        /// </summary>
+        private void WaitLoadProcess()
+        {
+            if (!webRequestAsync.isDone)
+            {
+                return;
+            }
+            if(this.webRequest == null)
+            {
+                return;
+            }
+            // エラーハンドリング
+            if (this.webRequest.result == UnityWebRequest.Result.ConnectionError ||
+                this.webRequest.result == UnityWebRequest.Result.ProtocolError)
+            {
+                this.state = EState.None;
+
+                if (this.webRequest != null)
+                {
+                    this.webRequest.Dispose();
+                    this.webRequest = null;
+                }
+                return;
+            }
+            if (!this.requestedFiles.ContainsKey(this.currentLoadingFile))
+            {
+                this.currentLoadingFile = "";
+                this.state = EState.None;
+                return;
+            }
+
+            int size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(this.webRequest);
+            if (!this.fileReadBuffer.IsCreated)
+            {
+                this.fileReadBuffer = new NativeArray<byte>(size, Allocator.Persistent);
+            }
+            else if (fileReadBuffer.Length < size)
+            {
+                this.fileReadBuffer.Dispose();
+                this.fileReadBuffer = new NativeArray<byte>(size, Allocator.Persistent);
+            }
+            UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
+
+            if (this.webRequest != null)
+            {
+                this.webRequest.Dispose();
+                this.webRequest = null;
+            }
+
+            ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
+            fileFormat.LoadHeader(this.fileReadBuffer);
+
+            // fileformat check
+            if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
+            {
+#if DEBUG
+                Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
+#endif
+                this.currentLoadingFile = "";
+                this.state = EState.None;
+                return;
+            }
+
+            if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
+            {
+                RemoveOldSprite();
+            }
+            using (var textureBodyData = fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer))
+            {
+                var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
+                    textureBodyData);
+                if (rect.width <= 0 || rect.height <= 0)
+                {
+                    Debug.LogError("Failed Add data " + currentLoadingFile);
+                }
+                this.compressedTexturePacker.ApplyToTexture();
+                var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
+                if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
+                {
+                    file.sprite = sprite;
+                    this.requestedFiles[currentLoadingFile] = file;
+                }
+                this.currentLoadingFile = "";
+                this.state = EState.None;
+            }
+
+        }
+
+#else
         /// <summary>
         /// Queueにあるものから、ロードをリクエストします
         /// </summary>
@@ -279,7 +436,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 this.state = EState.None;
             }
         }
+#endif
 
+        /// <summary>
+        /// OrderNumberを下げます
+        /// </summary>
         private void SortOutOrderNumber()
         {
             uint minimumOrderValue = uint.MaxValue;
@@ -304,6 +465,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.currentOrderValue -= minimumOrderValue;
         }
 
+        /// <summary>
+        /// 古いスプライトを削除します
+        /// </summary>
         private void RemoveOldSprite()
         {
             bool isFound = false;
@@ -327,7 +491,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     isFound = true;
                 }
             }
-            SortOutOrderNumber();
         }
 
 
