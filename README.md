@@ -49,7 +49,9 @@ You must use `SystemInfo.SupportsTextureFormat` to verify that the texture atlas
 [Click here for details](https://docs.unity3d.com/6000.0/Documentation/Manual/texture-choose-format-by-platform.html)
 
 
-### Loading a Single File (Excluding Web Runtime)
+### Loading a Single File 
+
+#### Excluding Web Runtime
 ```csharp
 public Texture2D LoadAstcTexture(){
     string path = System.IO.Path.Combine(Application.streamingAssetsPath, "test.astc");
@@ -65,6 +67,21 @@ public Texture2D LoadAstcTexture(){
         }
     }
     return null;
+}
+```
+
+#### WebRuntime
+
+```
+public async Awaitable<Texture2D> LoadRawTexture(){
+    string url = System.IO.Path.Combine(Application.streamingAssetsPath, "test.astc");
+
+    using (var fileBinary = await UnsafeFileReadUtility.LoadWithWebRequest(url, Allocator.Temp)){
+        var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+
+        var texture = textureFormatFile.LoadTexture(fileBinary);
+        return texture;
+    }
 }
 ```
 
