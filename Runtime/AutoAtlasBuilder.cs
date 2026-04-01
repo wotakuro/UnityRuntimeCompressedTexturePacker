@@ -10,6 +10,7 @@ using UnityEngine;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using System;
+using UnityEngine.Networking;
 
 
 
@@ -91,7 +92,144 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
         }
 
+#if UNITY_WEBGL
 
+        /// <summary>
+        /// 非同期ロード処理
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="onComplete"></param>
+        /// <param name="onFailedFile"></param>
+        /// <returns></returns>
+        public IEnumerator LoadAndPackAsyncCoroutine(IEnumerable<string> files, LoadingComplete onComplete,
+            TexturePackingError onFailedFile)
+        {
+            InitBeforeLoadStart(files, true);
+
+            foreach (var file in this.readFileListBuffer)
+            {
+                // 既に登録済みファイル
+                if (this.generatedSpriteByFile.TryGetValue(file, out Sprite sprite))
+                {
+                    this.generatedSpritesBuffer.Add(sprite);
+                    continue;
+                }
+                using (var webRequest = UnityWebRequest.Get(file))
+                {
+                    var operation = webRequest.SendWebRequest();
+
+                    while (!operation.isDone)
+                    {
+                        yield return null;
+                    }
+
+                    if (webRequest.result == UnityWebRequest.Result.ConnectionError ||
+                        webRequest.result == UnityWebRequest.Result.ProtocolError)
+                    {
+                        if (onFailedFile != null)
+                        {
+                            onFailedFile(file, 0, 0);
+                        }
+                        this.generatedSpritesBuffer.Add(null);
+                        continue;
+                    }
+                    int size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(webRequest);
+                    if (!this.fileReadBuffer.IsCreated)
+                    {
+                        this.fileReadBuffer = new NativeArray<byte>((int)size, Allocator.Persistent);
+                    }
+                    else if (this.fileReadBuffer.Length < size)
+                    {
+                        this.fileReadBuffer.Dispose();
+                        this.fileReadBuffer = new NativeArray<byte>(size, Allocator.Persistent);
+                    }
+                    UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
+                }
+                CreateSprite(file, this.fileReadBuffer, onFailedFile);
+            }
+            compressedTexturePacker.ApplyToTexture();
+            if (this.fileReadBuffer.IsCreated)
+            {
+                this.fileReadBuffer.Dispose();
+            }
+            this.ExecuteAfterLoadEnd();
+            if (onComplete != null)
+            {
+                onComplete(generatedSpritesBuffer);
+            }
+        }
+
+
+
+        /// <summary>
+        /// 非同期ロード処理
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="onComplete"></param>
+        /// <param name="onFailedFile"></param>
+        /// <returns></returns>
+        public async Awaitable<List<Sprite>> LoadAndPackAsync(IEnumerable<string> files,
+            LoadingComplete onComplete = null,
+            TexturePackingError onFailedFile = null)
+        {
+            InitBeforeLoadStart(files, true);
+            foreach (var file in this.readFileListBuffer)
+            {
+                // 既に登録済みファイル
+                if (this.generatedSpriteByFile.TryGetValue(file, out Sprite sprite))
+                {
+                    this.generatedSpritesBuffer.Add(sprite);
+                    continue;
+                }
+
+                using (var webRequest = UnityWebRequest.Get(file))
+                {
+                    var operation = webRequest.SendWebRequest();
+                    while (!operation.isDone)
+                    {
+                        await Awaitable.NextFrameAsync();
+                    }
+
+                    if (webRequest.result == UnityWebRequest.Result.ConnectionError ||
+                        webRequest.result == UnityWebRequest.Result.ProtocolError)
+                    {
+                        if (onFailedFile != null)
+                        {
+                            onFailedFile(file, 0, 0);
+                        }
+                        this.generatedSpritesBuffer.Add(null);
+                        continue;
+                    }
+                    int size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(webRequest);
+
+                    if (!this.fileReadBuffer.IsCreated)
+                    {
+                        this.fileReadBuffer = new NativeArray<byte>(size, Allocator.Persistent);
+                    }
+                    else if (this.fileReadBuffer.Length < size)
+                    {
+                        this.fileReadBuffer.Dispose();
+                        this.fileReadBuffer = new NativeArray<byte>(size, Allocator.Persistent);
+                    }
+                    UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
+                }
+                CreateSprite(file, fileReadBuffer, onFailedFile);
+            }
+            compressedTexturePacker.ApplyToTexture();
+            if (fileReadBuffer.IsCreated)
+            {
+                fileReadBuffer.Dispose();
+            }
+            this.ExecuteAfterLoadEnd();
+            if (onComplete != null)
+            {
+                onComplete(generatedSpritesBuffer);
+            }
+            return generatedSpritesBuffer;
+        }
+
+
+#else
         /// <summary>
         /// 非同期ロード処理
         /// </summary>
@@ -214,6 +352,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             return generatedSpritesBuffer;
         }
+#endif
 
 
 
@@ -227,7 +366,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             TexturePackingError onFailedFile = null)
         {
 #if UNITY_WEBGL 
-            throw new NotImplementedException("Does not support web runtme");
+            throw new NotImplementedException("Web runtimes do not support synchronous file access.");
 #endif
             InitBeforeLoadStart(files,false);
             NativeArray<long> fileSizes = new NativeArray<long>( files.Count(),Allocator.Temp);
@@ -302,6 +441,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         private void InitBeforeLoadStart(IEnumerable<string> files,bool copyFileList)
         {
+            if (this.isOnLoadingProcess)
+            {
+                throw new AlreadyRunningLoadingException();
+            }
             if (this.generatedSpritesBuffer == null)
             {
                 this.generatedSpritesBuffer = new List<Sprite>();

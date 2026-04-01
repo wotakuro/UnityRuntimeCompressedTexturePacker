@@ -72,8 +72,9 @@ namespace UTJ.Sample
                     Debug.LogError("Not support file " + inputField.text);
                 }
             }
-
         }
+
+
 
 #else
         /// <summary>

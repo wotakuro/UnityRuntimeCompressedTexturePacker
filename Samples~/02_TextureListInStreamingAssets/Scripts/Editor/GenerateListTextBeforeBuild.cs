@@ -2,6 +2,7 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEditor.Build;
 using UnityEngine;
+using System.Text;
 
 namespace UTJ.Sample
 {
@@ -17,20 +18,31 @@ namespace UTJ.Sample
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             string streamingPath = Application.streamingAssetsPath;
-            // Android‚Ì‚Ý
-            if (buildPlayerContext.BuildPlayerOptions.target == UnityEditor.BuildTarget.Android && Directory.Exists(streamingPath) )
+            // Web / Android‚Ì‚Ý
+            if ( (buildPlayerContext.BuildPlayerOptions.target == UnityEditor.BuildTarget.Android ||
+                buildPlayerContext.BuildPlayerOptions.target == UnityEditor.BuildTarget.WebGL)
+                && Directory.Exists(streamingPath) )
             {
                 var files = Directory.GetFiles(streamingPath, "*", SearchOption.AllDirectories);
-                List<string> outputFiles = new List<string>();
+                var sb = new StringBuilder(1024);
                 foreach (var file in files)
                 {
                     if (file.EndsWith(".meta"))
                     {
                         continue;
                     }
-                    outputFiles.Add(file.Substring(streamingPath.Length + 1).Replace('\\', '/'));
+                    var str = file.Substring(streamingPath.Length + 1).Replace('\\', '/');
+                    if(string.IsNullOrEmpty(str) || str == "list.txt")
+                    {
+                        continue;
+                    }
+                    if(sb.Length > 0)
+                    {
+                        sb.Append("\n");
+                    }
+                    sb.Append(str);
                 }
-                System.IO.File.WriteAllLines(Path.Combine(streamingPath, "list.txt"), outputFiles);
+                System.IO.File.WriteAllText(Path.Combine(streamingPath, "list.txt"), sb.ToString() );
             }
         }
 
