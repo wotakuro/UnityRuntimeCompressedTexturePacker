@@ -240,4 +240,5 @@ void OnDestroy(){
 
 ## Included Package Samples
 This package includes multiple runnable samples.<br />
+[Web runtime demo is available here](https://wotakuro.github.io/UnityRuntimeCompressedTexturePacker/) *Under development<br />
 [Click here for details](Documentation~/Samples.md)
