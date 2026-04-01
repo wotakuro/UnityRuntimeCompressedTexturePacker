@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using System.Text;
+using NUnit.Framework;
+using UnityEngine.Networking;
 
 namespace UTJ.Sample
 {
@@ -30,6 +32,72 @@ namespace UTJ.Sample
         // これまでに追加した数
         private int appendTextureNum = 0;
 
+#if UNITY_WEBGL
+
+        // Startメソッド
+        private async void Start()
+        {
+            this.SetupSupportTextureFormat();
+
+            var files = await GetStreamingAssetsFilesAsync();
+
+            foreach (var file in files)
+            {
+                if (file.EndsWith(".meta")) { continue; }
+                using (var fileBinary = await UnsafeFileReadUtility.LoadWithWebRequest(file, Unity.Collections.Allocator.Temp))
+                {
+                    var name = Path.GetFileName(file);
+                    var textureFormat = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+                    // Textureではない
+                    if (textureFormat is NullTextureFile)
+                    {
+                        continue;
+                    }
+
+                    var texture = textureFormat.LoadTexture(fileBinary);
+                    if (texture)
+                    {
+                        texture.name = name;
+                        this.AddTextureToUI(texture);
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// StreamingAssets以下にあるファイル一覧を取得します
+        /// </summary>
+        /// <returns></returns>
+        private async Awaitable<string[]> GetStreamingAssetsFilesAsync()
+        {
+            var url = Path.Combine(Application.streamingAssetsPath, "list.txt");
+            string resultTxt;
+            using (var request = UnityWebRequest.Get(url))
+            {
+                var operation = request.SendWebRequest();
+
+                while (!operation.isDone)
+                {
+                    await Awaitable.NextFrameAsync();
+                }
+
+                // エラーハンドリング
+                if (request.result == UnityWebRequest.Result.ConnectionError ||
+                    request.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    return null;
+                }
+                resultTxt = request.downloadHandler.text;
+            }
+            var lines = resultTxt.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            var result = new string[lines.Length]; 
+            for(int i=0; i<lines.Length; i++)
+            {
+                result[i] = Path.Combine(Application.streamingAssetsPath, lines[i]);
+            }
+            return result;
+        }
+#else
+
         // Startメソッド
         private void Start()
         {
@@ -45,7 +113,7 @@ namespace UTJ.Sample
                     var name = Path.GetFileName(file);
                     var textureFormat = TextureFileFormatUtility.GetTextureFileFormatObject(binFile);
                     // Textureではない
-                    if(textureFormat is NullTextureFile)
+                    if (textureFormat is NullTextureFile)
                     {
                         continue;
                     }
@@ -59,6 +127,34 @@ namespace UTJ.Sample
                 }
             }
         }
+
+        /// <summary>
+        /// StreamingAsset以下のファイル一覧取得
+        /// AndroidではBuild時に書き出される list.txtを用いてStreamingAsset以下を読みます。
+        /// </summary>
+        /// <returns>StreamingAssets以下のファイル一覧</returns>
+        private string[] GetStreamingAssetsFiles()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            string[] result;
+            using (var bin = UnsafeFileReadUtility.LoadFileSync(Path.Combine(Application.streamingAssetsPath, "list.txt"), Allocator.Temp))
+            {
+                string str = System.Text.UTF8Encoding.UTF8.GetString(bin.AsReadOnlySpan());
+                string[] lines = str.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+                result = new string[lines.Length];
+                for(int i = 0; i < lines.Length; ++i)
+                {
+                    result[i] = Path.Combine(Application.streamingAssetsPath , lines[i]);
+                }
+                return result;
+            }
+#else
+            return Directory.GetFiles(Application.streamingAssetsPath, "*", SearchOption.AllDirectories);
+#endif
+        }
+#endif
+
 
         /// <summary>
         /// サポートしているTextureFormat一覧
@@ -87,33 +183,6 @@ namespace UTJ.Sample
             }
             this.supportTextureInfo.text = sb.ToString();
         }
-
-        /// <summary>
-        /// StreamingAsset以下のファイル一覧取得
-        /// AndroidではBuild時に書き出される list.txtを用いてStreamingAsset以下を読みます。
-        /// </summary>
-        /// <returns>StreamingAssets以下のファイル一覧</returns>
-        private string[] GetStreamingAssetsFiles()
-        {
-#if UNITY_ANDROID && !UNITY_EDITOR
-            string[] result;
-            using (var bin = UnsafeFileReadUtility.LoadFileSync(Path.Combine(Application.streamingAssetsPath, "list.txt"), Allocator.Temp))
-            {
-                string str = System.Text.UTF8Encoding.UTF8.GetString(bin.AsReadOnlySpan());
-                string[] lines = str.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
-                result = new string[lines.Length];
-                for(int i = 0; i < lines.Length; ++i)
-                {
-                    result[i] = Path.Combine(Application.streamingAssetsPath , lines[i]);
-                }
-                return result;
-            }
-#else
-            return Directory.GetFiles(Application.streamingAssetsPath, "*", SearchOption.AllDirectories);
-#endif
-        }
-
 
         /// <summary>
         /// TextureをUI上に足します

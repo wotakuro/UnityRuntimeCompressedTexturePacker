@@ -54,41 +54,25 @@ namespace UTJ.Sample
         /// </summary>
         public async void LoadAstcTexture()
         {
-            string path = System.IO.Path.Combine(Application.streamingAssetsPath, inputField.text);
- 
-            using (UnityWebRequest request = UnityWebRequest.Get(path))
+            string url = System.IO.Path.Combine(Application.streamingAssetsPath, inputField.text);
+
+
+            using (var fileBinary = await UnsafeFileReadUtility.LoadWithWebRequest(url, Allocator.Temp))
             {
-                // リクエストを送信
-                var operation = request.SendWebRequest();
+                var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
 
-                while (!operation.isDone)
+                var texture = textureFormatFile.LoadTexture(fileBinary);
+                dstImage.texture = texture;
+                if (texture)
                 {
-                    await Awaitable.NextFrameAsync();
+                    this.AdjustImageSize();
                 }
-
-                // エラーハンドリング
-                if (request.result == UnityWebRequest.Result.ConnectionError ||
-                    request.result == UnityWebRequest.Result.ProtocolError)
+                else
                 {
-                    dstImage.texture = null;
-                    return;
-                }
-                using (var fileBinary = UnsafeFileReadUtility.GetDataFromWebRequest(request, Allocator.Temp))
-                {
-                    var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
-
-                    var texture = textureFormatFile.LoadTexture(fileBinary);
-                    dstImage.texture = texture;
-                    if (texture)
-                    {
-                        this.AdjustImageSize();
-                    }
-                    else
-                    {
-                        Debug.LogError("Not support file " + inputField.text);
-                    }
+                    Debug.LogError("Not support file " + inputField.text);
                 }
             }
+
         }
 
 #else

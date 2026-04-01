@@ -5,6 +5,10 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using System;
 using UnityEngine.Networking;
+using UnityEngine.ParticleSystemJobs;
+using System.IO;
+using UnityEngine.UI;
+using UTJ.RuntimeCompressedTexturePacker.Format;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -92,12 +96,50 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return data;
         }
 
+        /// <summary>
+        /// WebRequestを用いたデータロード
+        /// </summary>
+        /// <param name="url">URLの指定</param>
+        /// <param name="allocator">Allocatorの指定</param>
+        /// <returns>ロードされたデータ。Disposeも行って下さい</returns>
+        public static async Awaitable< NativeArray<byte> > LoadWithWebRequest(string url,Allocator allocator)
+        {
+            using (UnityWebRequest request = UnityWebRequest.Get(url))
+            {
+                var operation = request.SendWebRequest();
+
+                while (!operation.isDone)
+                {
+                    await Awaitable.NextFrameAsync();
+                }
+
+                // エラーハンドリング
+                if (request.result == UnityWebRequest.Result.ConnectionError ||
+                    request.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    return new NativeArray<byte>();
+                }
+                var fileBinary = UnsafeFileReadUtility.GetDataFromWebRequest(request, allocator);
+                return fileBinary;
+            }
+        }
+
+        /// <summary>
+        /// WebRequestからサイズを取得します
+        /// </summary>
+        /// <param name="request">WebRequestの指定</param>
+        /// <returns>ダウンロードしたサイズ</returns>
         public static int GetDataSizeFromWebRequest(UnityWebRequest request)
         {
             return request.downloadHandler.nativeData.Length;
         }
 
-
+        /// <summary>
+        /// WebRequestからデータを取得します
+        /// </summary>
+        /// <param name="request">WebRequestの指定</param>
+        /// <param name="dest">書き込み先データサイズ</param>
+        /// <returns>書き込んだサイズ</returns>
         public static int GetDataFromWebRequest(UnityWebRequest request, NativeArray<byte> dest)
         {
             var src = request.downloadHandler.nativeData;
