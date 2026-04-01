@@ -1,4 +1,3 @@
-list.txt
 astc/Banner/banner_beer_4x4.astc
 astc/Banner/banner_fruits_4x4.astc
 astc/Banner/banner_lunchBox_4x4.astc
