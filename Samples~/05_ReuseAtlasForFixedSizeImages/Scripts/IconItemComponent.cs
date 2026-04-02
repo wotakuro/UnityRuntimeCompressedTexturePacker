@@ -50,13 +50,14 @@ namespace UTJ.Sample
             {
                 return;
             }
-            this.loadingImage.sprite = this.recycleAtlasForFixedSizeImages.Request(this.loadingIconPath);
+            var loadingSprite = this.recycleAtlasForFixedSizeImages.Request(this.loadingIconPath);
+            this.loadingImage.sprite = loadingSprite;
             var imageSprite = this.recycleAtlasForFixedSizeImages.Request(this.iconPath);
             this.imageBody.sprite = imageSprite;
 
             this.loadingImage.rectTransform.localRotation = Quaternion.Euler(0, 0, Time.timeSinceLevelLoad * 360.0f);
 
-            this.loadingImage.enabled = (imageSprite == null);
+            this.loadingImage.enabled = (loadingSprite != null ) &(imageSprite == null);
             this.imageBody.enabled = (imageSprite != null);
         }
 
