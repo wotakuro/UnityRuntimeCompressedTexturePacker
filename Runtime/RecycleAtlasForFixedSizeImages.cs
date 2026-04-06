@@ -8,8 +8,8 @@ using UnityEngine;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
-using Unity.IO.LowLevel.Unsafe;
-using UnityEngine.Networking;
+using Unity.IO.LowLevel.Unsafe; // not web
+using UnityEngine.Networking; // WebOnly
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -89,6 +89,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
         }
 
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
@@ -155,7 +156,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
 #endif
             this.requestedFiles.Add(path, requestFile);
-            this.loadQueue.Enqueue(path);
+            this.AppendLoadingWaintList(path);
 
             ++currentOrderValue;
             UpdateIfFrameChaged();
@@ -221,12 +222,12 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         private void LoadRequestFromQueue()
         {
-            if (loadQueue.Count <= 0)
+            if (IsLoadWaitListIsEmpty())
             {
                 return;
             }
             RequestFile requestFile;
-            this.currentLoadingFile = this.loadQueue.Dequeue();
+            this.currentLoadingFile = PickupLoadingWaitList();
             if (!this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
             {
                 return;
@@ -235,6 +236,21 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 return;
             }
+
+            bool stateChange = true;
+            if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
+            {
+                if (ShouldAppendCurrentData(currentLoadingFile))
+                {
+                    RemoveOldSprite();
+                }
+                else
+                {
+                    currentLoadingFile = null;
+                    stateChange = false;
+                }
+            }
+
             if (this.webRequest != null)
             {
                 this.webRequest.Dispose();
@@ -242,13 +258,13 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             this.webRequest = UnityWebRequest.Get(requestFile.file);
             this.webRequestAsync = this.webRequest.SendWebRequest();
-//            this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.fileReadBuffer, requestFile.fileSize);
-            this.state = EState.Loading;
-            if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
-            {
-                RemoveOldSprite();
-            }
+            //            this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.fileReadBuffer, requestFile.fileSize);
 
+
+            if (stateChange)
+            {
+                this.state = EState.Loading;
+            }
         }
 
         /// <summary>
@@ -347,12 +363,12 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         private void LoadRequestFromQueue()
         {
-            if (loadQueue.Count <= 0)
+            if (IsLoadWaitListIsEmpty())
             {
                 return;
             }
             RequestFile requestFile;
-            this.currentLoadingFile = this.loadQueue.Dequeue();
+            this.currentLoadingFile = this.PickupLoadingWaitList();
             if (!this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
             {
                 return;
@@ -439,6 +455,33 @@ namespace UTJ.RuntimeCompressedTexturePacker
 #endif
 
         /// <summary>
+        /// ロードリストに追加します
+        /// </summary>
+        /// <param name="path">追加するパス</param>
+        private void AppendLoadingWaintList(string path)
+        {
+            this.loadQueue.Enqueue(path);
+        }
+
+        /// <summary>
+        /// ロードリストから一個選びます
+        /// </summary>
+        /// <returns>ロード待ちから一つ取り出します</returns>
+        private string PickupLoadingWaitList()
+        {
+            return this.loadQueue.Dequeue();
+        }
+
+        /// <summary>
+        /// ロード待ちリストが空かを返します
+        /// </summary>
+        /// <returns>ロード待ちが空ならTrue</returns>
+        private bool IsLoadWaitListIsEmpty()
+        {
+            return (loadQueue.Count <= 0);
+        }
+
+        /// <summary>
         /// OrderNumberを下げます
         /// </summary>
         private void SortOutOrderNumber()
@@ -463,6 +506,35 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 requestedFiles[key] = val;
             }
             this.currentOrderValue -= minimumOrderValue;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="currentFile"></param>
+        /// <returns></returns>
+        private bool ShouldAppendCurrentData(string currentFile)
+        {
+            RequestFile current;
+            if(!this.requestedFiles.TryGetValue(currentFile, out current))
+            {
+                Debug.Log("not Found " + currentFile);
+                return false;
+            }
+
+            RequestFile oldest = new RequestFile() { orderValue = uint.MaxValue };
+            foreach (var requestFile in requestedFiles.Values)
+            {
+                if(!requestFile.sprite)
+                {
+                    continue;
+                }
+                if (oldest.orderValue > requestFile.orderValue)
+                {
+                    oldest = requestFile;
+                }
+            }
+            return (current.orderValue > oldest.orderValue);
         }
 
         /// <summary>
