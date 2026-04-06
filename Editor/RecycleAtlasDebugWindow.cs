@@ -74,7 +74,9 @@ namespace UTJ.RuntimeCompressedTexturePacker.Editor
                 this.currentLoadingLabel.text = System.IO.Path.GetFileName(instance.CurrentFile);
                 this.currentState.text = instance.State.ToString();
                 this.currentOrder.text = instance.CurrentOder.ToString();
+#if !UNITY_WEBGL
                 this.readStatus.text = instance.readStatus.ToString();
+#endif
 
                 SetupLoadQueue(instance);
                 SetupRequestFiles(instance);
@@ -125,7 +127,8 @@ namespace UTJ.RuntimeCompressedTexturePacker.Editor
             for (int i = 0; i < requestFiles.Count; ++i)
             {
                 var order = instance.GetOrderValueInRequestFile(requestFiles[i]);
-                result[i].text =requestFiles[i] + "  " + order;
+                var isExists = instance.IsSriteExists(requestFiles[i]);
+                result[i].text =requestFiles[i] + "  " + order + "  " + isExists;
             }
         }
     }

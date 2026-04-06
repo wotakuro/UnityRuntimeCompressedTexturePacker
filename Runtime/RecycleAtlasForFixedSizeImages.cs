@@ -9,7 +9,8 @@ using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
 using Unity.IO.LowLevel.Unsafe; // not web
-using UnityEngine.Networking; // WebOnly
+using UnityEngine.Networking;
+using System.Runtime.CompilerServices; // WebOnly
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -35,7 +36,37 @@ namespace UTJ.RuntimeCompressedTexturePacker
             public uint orderValue;
             public Sprite sprite;
             public int fileSize;
+            public int frame;
         }
+
+        // 待ちリスト比較用
+        private class ComparerForWaitList : IComparer<string>
+        {
+            private Dictionary<string, RequestFile> requestedFiles;
+
+            public ComparerForWaitList(Dictionary<string, RequestFile> requests)
+            {
+                this.requestedFiles = requests;
+            }
+            public int Compare(string x, string y)
+            {
+                RequestFile xObj,yObj;
+                if (!requestedFiles.TryGetValue(x, out xObj))
+                {
+                    if (!requestedFiles.ContainsKey(y))
+                    {
+                        return 0;
+                    }
+                    return -1;
+                }
+                if (!requestedFiles.TryGetValue(y, out yObj))
+                {
+                    return 1;
+                }
+                return (int)xObj.orderValue - (int)yObj.orderValue;
+            }
+        }
+
         // 現在の順番
         private uint currentOrderValue;
 
@@ -43,7 +74,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private Dictionary<string, RequestFile> requestedFiles = new Dictionary<string, RequestFile>();
 
         /// ロードのキュー
-        private Queue<string> loadQueue = new Queue<string>();
+        private List<string> waitLoadList = new List<string>();
 
         // StringのKey用のBuffer
         private List<string> keyBuffer = new List<string>();
@@ -68,6 +99,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private NativeArray<byte> fileReadBuffer;
         /// 飽きを探すアルゴリズム
         private IRectResolveAlgorithm resolveAlgorithm;
+
+        ///  ソート用オブジェクト
+        private ComparerForWaitList comparerForWaitList;
 
         // 現在のState
         private EState state = EState.None;
@@ -98,17 +132,17 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="textureFormat"></param>
         /// <param name="gridWidth"></param>
         /// <param name="gridHeight"></param>
-        public RecycleAtlasForFixedSizeImages(int width, int height, TextureFormat textureFormat, int gridWidth, int gridHeight)
+        public RecycleAtlasForFixedSizeImages(int width, int height, TextureFormat textureFormat, int gridWidth, int gridHeight,int margin=0)
         {
             int blockX, blockY, blockSize;
             TextureFileFormatUtility.GetBlockInfo(textureFormat, out blockX, out blockY, out blockSize);
 
-            this.actualGridWidth = ((gridWidth + blockX - 1) / blockX) * blockX;
-            this.actualGridHeight = ((gridHeight + blockY - 1) / blockY) * blockY;
+            this.actualGridWidth = ((gridWidth + blockX - 1 + margin) / blockX) * blockX;
+            this.actualGridHeight = ((gridHeight + blockY - 1 + margin) / blockY) * blockY;
 
             this.resolveAlgorithm = new GridMapPacking(actualGridWidth, actualGridHeight);
             this.compressedTexturePacker = new CompressedTexturePacker(width, height, textureFormat,
-                false, this.resolveAlgorithm,0);
+                false, this.resolveAlgorithm, margin);
 
 #if RCTP_DEVMODE
             Instance = this;
@@ -122,13 +156,22 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <returns>作成されたSprite（nullは作成中)</returns>
         public Sprite Request(string path)
         {
+            if (string.IsNullOrEmpty(path))
+            {
+                return null;
+            }
             // 
+            int currentFrame = Time.frameCount;
             RequestFile requestFile;
             if (requestedFiles.TryGetValue(path, out requestFile))
             {
                 ++currentOrderValue;
-                requestFile.orderValue = currentOrderValue;
-                this.requestedFiles[path] = requestFile;
+                if (requestFile.frame != currentFrame)
+                {
+                    requestFile.orderValue = currentOrderValue;
+                    requestFile.frame = currentFrame;
+                    this.requestedFiles[path] = requestFile;
+                }
                 UpdateIfFrameChaged();
                 return requestFile.sprite;
             }
@@ -138,7 +181,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 file = path,
                 orderValue = currentOrderValue,
                 sprite = null,
-                fileSize = 0
+                fileSize = 0,
+                frame = Time.frameCount,
             };
 
 #else
@@ -147,7 +191,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 file = path,
                 orderValue = currentOrderValue,
                 sprite = null,
-                fileSize = (int)UnsafeFileReadUtility.GetFileSize(path)
+                fileSize = (int)UnsafeFileReadUtility.GetFileSize(path),
+                frame = Time.frameCount,
             };
             if (requestFile.fileSize <= 0)
             {
@@ -163,6 +208,41 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return null;
         }
 
+
+        /// <summary>
+        /// ロード待ちのリストから削除を行います
+        /// </summary>
+        /// <param name="path">リストから削除したいファイル</param>
+        public void RemoveFromWaitList(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+            if (this.currentLoadingFile == path)
+            {
+                return;
+            }
+
+            RequestFile requestFile;
+            if (!requestedFiles.TryGetValue(path, out requestFile))
+            {
+                return;
+            }
+            if (requestFile.sprite == null)
+            {
+                int length = this.waitLoadList.Count;
+                for (int i = 0; i < length; ++i)
+                {
+                    if (this.waitLoadList[i] == path)
+                    {
+                        this.waitLoadList.RemoveAt(i);
+                        break;
+                    }
+                }
+                this.requestedFiles.Remove(path);
+            }
+        }
 
         /// <summary>
         /// Dispose処理
@@ -201,7 +281,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 return;
             }
             this.prevTimeFrameCount = Time.frameCount;
-            if(this.currentOrderValue > uint.MaxValue /2)
+            if(this.currentOrderValue > uint.MaxValue / 4)
             {
                 this.SortOutOrderNumber();
             }
@@ -226,6 +306,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 return;
             }
+
             RequestFile requestFile;
             this.currentLoadingFile = PickupLoadingWaitList();
             if (!this.requestedFiles.TryGetValue(this.currentLoadingFile, out requestFile))
@@ -258,7 +339,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             this.webRequest = UnityWebRequest.Get(requestFile.file);
             this.webRequestAsync = this.webRequest.SendWebRequest();
-            //            this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.fileReadBuffer, requestFile.fileSize);
 
 
             if (stateChange)
@@ -460,8 +540,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <param name="path">追加するパス</param>
         private void AppendLoadingWaintList(string path)
         {
-            this.loadQueue.Enqueue(path);
+            this.waitLoadList.Add(path);
         }
+
 
         /// <summary>
         /// ロードリストから一個選びます
@@ -469,7 +550,48 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <returns>ロード待ちから一つ取り出します</returns>
         private string PickupLoadingWaitList()
         {
-            return this.loadQueue.Dequeue();
+            if (this.waitLoadList.Count == 0)
+            {
+                return null;
+            }
+
+            this.SortOutOrderNumber();
+            if (this.comparerForWaitList == null)
+            {
+                this.comparerForWaitList = new ComparerForWaitList(this.requestedFiles);
+            }
+            this.waitLoadList.Sort(this.comparerForWaitList);
+            int index = GetIndexForLoading();
+            string path = this.waitLoadList[index];
+            this.waitLoadList.RemoveAt(index);
+            return path;
+        }
+
+        /// <summary>
+        /// ソート済みのロードリストから、最初にロードすべきIndexを返します
+        /// </summary>
+        /// <returns>ロードすべきIndexを返します</returns>
+        private int GetIndexForLoading()
+        {
+            int lastIndex = this.waitLoadList.Count - 1;
+            RequestFile requested;
+            if (!this.requestedFiles.TryGetValue(this.waitLoadList[lastIndex], out requested))
+            {
+                return lastIndex;
+            }
+            int frame = requested.frame;
+            for (int i= lastIndex-1; i >= 0; --i)
+            {
+                if (!this.requestedFiles.TryGetValue(this.waitLoadList[i], out requested))
+                {
+                    return lastIndex;
+                }
+                if(frame != requested.frame)
+                {
+                    return i + 1;
+                }
+            }
+            return 0;
         }
 
         /// <summary>
@@ -478,7 +600,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <returns>ロード待ちが空ならTrue</returns>
         private bool IsLoadWaitListIsEmpty()
         {
-            return (loadQueue.Count <= 0);
+            return (waitLoadList.Count <= 0);
         }
 
         /// <summary>
@@ -518,7 +640,6 @@ namespace UTJ.RuntimeCompressedTexturePacker
             RequestFile current;
             if(!this.requestedFiles.TryGetValue(currentFile, out current))
             {
-                Debug.Log("not Found " + currentFile);
                 return false;
             }
 
@@ -570,11 +691,13 @@ namespace UTJ.RuntimeCompressedTexturePacker
 #if RCTP_DEVMODE
         public uint CurrentOder => currentOrderValue;
         public string CurrentFile => currentLoadingFile;
-        public List<string> LoadingQueue => this.loadQueue.ToList();
+        public List<string> LoadingQueue => this.waitLoadList;
 
         public int State => (int)this.state;
 
+#if !UNITY_WEBGL
         public ReadStatus readStatus => this.readHandle.Status;
+#endif
 
         public List<string> RequestedFiles => this.requestedFiles.Keys.ToList();
 
@@ -588,6 +711,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 return request.orderValue;
             }
             return uint.MaxValue;
+        }
+        public bool IsSriteExists(string file)
+        {
+            RequestFile request;
+            if (this.requestedFiles.TryGetValue(file, out request))
+            {
+                return request.sprite;
+            }
+            return false;
         }
 #endif
     }

@@ -42,6 +42,10 @@ namespace UTJ.Sample
         // アイコンアイテムがスクロールアウトしたときの処理
         public void UnbindItem()
         {
+            if (!string.IsNullOrEmpty(this.iconPath) && this.recycleAtlasForFixedSizeImages != null)
+            {
+                this.recycleAtlasForFixedSizeImages.RemoveFromWaitList(this.iconPath);
+            }
             this.iconPath = null;
         }
 
