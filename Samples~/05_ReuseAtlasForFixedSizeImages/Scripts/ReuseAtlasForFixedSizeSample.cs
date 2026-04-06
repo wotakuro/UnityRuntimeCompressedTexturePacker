@@ -1,5 +1,4 @@
-﻿using System.Collections.Specialized;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UTJ.RuntimeCompressedTexturePacker;
 using UTJ.RuntimeCompressedTexturePacker.Format;
@@ -25,19 +24,24 @@ namespace UTJ.Sample
         [SerializeField]
         private Text textureFormatInfo;
 
+        // 固定サイズの画像をAtlasを再利用しながら読み込むオブジェうkと
         private RecycleAtlasForFixedSizeImages recycleAtlasForFixed;
 
+        // アイコン表示しているアイテムオブジェクト（再利用するバッファ）
         private ListItemContainer<IconItemComponent> iconItemsContainer;
 
-
+        //　ロードするアイコン画像名
         private const string LoadingIconName = "icon_loading";
-        private string[] iconPaths;
+
+        // 実際に読み込むロードアイコンの画像パス
         private string loadingIconPath;
+        // 実際に読み込むアイコン画像のパス
+        private string[] iconPaths;
 
-
+        // 初期化処理
         private void Awake()
         {
-
+            // 実際のファイルパス、画像フォーマット等の決定
             var iconNames = GetIconImages();
             this.iconPaths = new string[iconNames.Length];
             TextureFormat textureFormat = TextureFormat.ARGB32;
@@ -70,38 +74,48 @@ namespace UTJ.Sample
                 this.loadingIconPath = GetAssetPath(LoadingIconName, "ddsBC7/Icon/", "_BC7_UNORM.dds");
             }
 
-
-
+            // RecycleAtlasオブジェクトの作成
             this.recycleAtlasForFixed = new RecycleAtlasForFixedSizeImages(1024, 1024, textureFormat, 256, 256);
 
+            // アイコン表示のセットアップ
             this.iconItemsContainer = new ListItemContainer<IconItemComponent>();
             this.iconItemsContainer.Setup(itemPrefab, scrollRect, iconPaths.Length, 160, 10, this.OnBindItem, this.OnUnbindItem);
 
+            // 画像のセットアップ
             if (textureFormatInfo)
             {
                 textureFormatInfo.text = "AtlasTexture "+ textureFormat.ToString();
             }
-
         }
 
+        // 更新処理
         private void Update()
         {
+            // デバッグ表示用のAtlasテクスチャ表示を設定
             if (this.recycleAtlasForFixed.texture2D)
             {
                 buildAtlasImage.texture = this.recycleAtlasForFixed.texture2D;
             }
+            // 画面比率が変わった等があった時にアイテムを追加します
+            if(iconItemsContainer != null)
+            {
+                iconItemsContainer.AppendBufferObjectIfNeeded();
+            }
         }
 
+        // アイテムがスクロールインして表示される時に呼び出されるコールバック
         private void OnBindItem( IconItemComponent item , int index)
         {
             item.BindItem(this.recycleAtlasForFixed, this.iconPaths[index],this.loadingIconPath);
         }
 
+        // アイテムがスクロールアウトして表示される時に呼び出されるコールバック
         private void OnUnbindItem(IconItemComponent item, int index)
         {
             item.UnbindItem();
         }
 
+        // 破棄時の処理
         private void OnDestroy()
         {
             if (recycleAtlasForFixed != null)
@@ -111,11 +125,13 @@ namespace UTJ.Sample
             }
         }
 
+        // 実際のAssetパスを取得
         private string GetAssetPath(string name,string head,string tail)
         {
             return System.IO.Path.Combine(Application.streamingAssetsPath, head + name + tail);
         }
 
+        // 実際に読み込むアイコン一覧取得
         private string[] GetIconImages()
         {
             string[] iconNames = new string[49];

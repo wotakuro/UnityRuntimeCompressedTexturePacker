@@ -82,23 +82,49 @@ namespace UTJ.Sample
             this.bufferedObject = new List<InstatntiateObject>(bufferNum);
             for (int i = 0; i < bufferNum; i++)
             {
-
-                var gmo = GameObject.Instantiate(itemPrefab);
-                var rectTransform = gmo.GetComponent<RectTransform>();
-                rectTransform.SetParent(this.scrollRect.content);
-                rectTransform.localScale = Vector3.one;
-                rectTransform.localPosition = new Vector3(20, - marginTop - i * itemHeight, 0.0f);
-
-                var obj = new InstatntiateObject()
-                {
-                    gameObject = gmo,
-                    rectTransform = rectTransform,
-                    itemIndex = i,
-                    itemComponent = gmo.GetComponent<T>()
-                };
-                this.bindItemFunc(obj.itemComponent, i);
+                var obj = CreateInstanceObject(i);
                 this.bufferedObject.Add(obj);
             }
+        }
+
+        /// <summary>
+        /// 必要であるならバッファーの拡張を行います
+        /// </summary>
+        public void AppendBufferObjectIfNeeded()
+        {
+            int currentSize = (int)(scrollRectTransform.rect.height / itemHeight) + 2;
+            for (int i = this.bufferedObject.Count; i < currentSize; i++)
+            {
+                var obj = CreateInstanceObject(i);
+                this.bufferedObject.Add(obj);
+            }
+        }
+
+
+        /// <summary>
+        /// バッファ用のオブジェクトの追加処理を行います
+        /// </summary>
+        /// <param name="itemIndex">アイテムオブジェクト</param>
+        /// <returns>追加したアイテム</returns>
+        private InstatntiateObject CreateInstanceObject(int itemIndex)
+        {
+            var gmo = GameObject.Instantiate(this.itemPrefab);
+            var rectTransform = gmo.GetComponent<RectTransform>();
+            rectTransform.SetParent(this.scrollRect.content);
+            rectTransform.localScale = Vector3.one;
+            rectTransform.localPosition = new Vector3(20, -marginTop - itemIndex * itemHeight, 0.0f);
+
+            var obj = new InstatntiateObject()
+            {
+                gameObject = gmo,
+                rectTransform = rectTransform,
+                itemIndex = itemIndex,
+                itemComponent = gmo.GetComponent<T>()
+            };
+            if (itemIndex >= 0){
+                this.bindItemFunc(obj.itemComponent, itemIndex);
+            }
+            return obj;
         }
 
         /// <summary>
@@ -121,8 +147,15 @@ namespace UTJ.Sample
             float positionY = scrollRect.content.anchoredPosition.y;
 
             int head = (int)(positionY + marginTop) / itemHeight;
+            if (head < 0)
+            {
+                head = 0;
+            }
             int tail = (int)(positionY + marginTop + scrollRectTransform.rect.height) / itemHeight;
-
+            if(tail >= itemNum)
+            {
+                tail = itemNum - 1;
+            }
 
 
             // 範囲外のモノを itemIndex -1でマークします

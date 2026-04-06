@@ -10,12 +10,32 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
     public static class TextureFileFormatUtility
     {
         /// <summary>
+        /// 独自のTextureFomat（暗号化等）を対応するためのDelgateを用意
+        /// </summary>
+        /// <param name="fileBinary">ファイルのバイナリデータが入ります</param>
+        /// <returns>適切なファイルフォーマットを返します</returns>
+        public delegate ITextureFileFormat AppendFormatDetelctFuncction(NativeArray<byte> fileBinary);
+
+        /// <summary>
+        /// 独自のFileFormatを追加する必要がある場合は設定してください
+        /// </summary>
+        public static AppendFormatDetelctFuncction appendFormatDetelctFuncction;
+
+        /// <summary>
         /// Binaryデータから、ファイルフォーマットを判定して返します
         /// </summary>
         /// <param name="fileBinary">ファイルバイナリ全体</param>
         /// <returns>データに対応したファイルフォーマットオブジェクトを返します</returns>
         public static ITextureFileFormat GetTextureFileFormatObject(NativeArray<byte> fileBinary)
         {
+            if (appendFormatDetelctFuncction != null)
+            {
+                var format = appendFormatDetelctFuncction(fileBinary);
+                if (!(format is NullTextureFile))
+                {
+                    return format;
+                }
+            }
             if (AstcTextureFile.SignatureValid(fileBinary))
             {
                 return new AstcTextureFile();
