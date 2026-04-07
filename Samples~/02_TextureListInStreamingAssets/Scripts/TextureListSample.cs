@@ -190,6 +190,10 @@ namespace UTJ.Sample
         /// <param name="texture">テクスチャー</param>
         private void AddTextureToUI(Texture2D texture)
         {
+            if (!this.scrollRect)
+            {
+                return;
+            }
             var spriteGmo = new GameObject("texture", typeof(RectTransform));
             var spriteRectTransform = spriteGmo.GetComponent<RectTransform>();
             spriteRectTransform.SetParent(this.scrollRect.content);
