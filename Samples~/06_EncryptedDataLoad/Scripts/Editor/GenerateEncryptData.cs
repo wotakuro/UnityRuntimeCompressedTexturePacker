@@ -109,8 +109,10 @@ namespace UTJ.Sample
             using (var originalFileBinary = UnsafeFileReadUtility.LoadFileSync(srcFilePath, Allocator.Temp))
             {
                 ITextureFileFormat textureFileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(originalFileBinary);
+                textureFileFormat.LoadHeader(originalFileBinary);
                 if (!textureFileFormat.IsValid)
                 {
+                    UnityEngine.Debug.Log(textureFileFormat.ToString());
                     return new NativeArray<byte>();
                 }
 
@@ -121,7 +123,7 @@ namespace UTJ.Sample
                 WriteUint(data, 4, (uint)textureFileFormat.width);
                 WriteUint(data, 8, (uint)textureFileFormat.height);
                 WriteUint(data, 12, (uint)textureFileFormat.textureFormat);
-                NativeArray<byte>.Copy(imgData, 0, data, 16, data.Length);
+                NativeArray<byte>.Copy(imgData, 0, data, 16, imgData.Length);
                 EncryptData(imgData, 16,EncryptKey);
             }
             return data;

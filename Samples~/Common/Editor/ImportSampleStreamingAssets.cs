@@ -6,7 +6,7 @@ namespace UTJ.Sample
     [FilePath("UserSettings/RCTP_StreamingAssetsProcess.asset", FilePathAttribute.Location.ProjectFolder)]
     public class ImportSampleStreamingAssets : ScriptableSingleton<ImportSampleStreamingAssets>
     {
-        private const int currentVersion = 3;
+        private const int currentVersion = 4;
         [SerializeField]
         public bool isImportPackage = false;
 

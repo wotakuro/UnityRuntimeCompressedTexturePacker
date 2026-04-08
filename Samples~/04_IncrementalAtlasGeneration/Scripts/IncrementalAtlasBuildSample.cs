@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UTJ.RuntimeCompressedTexturePacker;
 using System.Runtime.CompilerServices;
 using System.Collections;
+using UnityEditorInternal;
 
 
 namespace UTJ.Sample
@@ -226,9 +227,9 @@ namespace UTJ.Sample
         /// <param name="file">失敗したファイル</param>
         /// <param name="width">失敗したTextureの幅</param>
         /// <param name="height">失敗したTextureの高さ</param>
-        private void OnFailedLoadFile(string file, int width, int height)
+        private void OnFailedLoadFile(string file, AutoAtlasBuilder.AtlasFailReason reason, int width, int height)
         {
-            Debug.LogError("Failed LoadFile " + file + "::" + width + "x" + height);
+            Debug.LogError("Failed LoadFile " + file + "::" + reason+ "::" + width + "x" + height);
         }
 
 

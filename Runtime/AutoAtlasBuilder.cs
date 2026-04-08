@@ -22,12 +22,24 @@ namespace UTJ.RuntimeCompressedTexturePacker
     public class AutoAtlasBuilder : System.IDisposable
     {
         /// <summary>
+        /// 失敗した理由が入ります
+        /// </summary>
+        public enum AtlasFailReason
+        {
+            WebRequestError,
+            FileLoadError,
+            DataFormatError,
+            TextureFormatDifferent,
+            NoSpaceInAtlas,
+        }
+
+        /// <summary>
         /// TextureをロードしてPackingする時のエラー
         /// </summary>
         /// <param name="file">ファイル名</param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        public delegate void TexturePackingError(string file, int width, int height);
+        public delegate void TexturePackingError(string file, AtlasFailReason reason, int width, int height);
 
         /// <summary>
         /// ロード完了時の関数
@@ -129,7 +141,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         if (onFailedFile != null)
                         {
-                            onFailedFile(file, 0, 0);
+                            onFailedFile(file,AtlasFailReason.WebRequestError, 0, 0);
                         }
                         this.generatedSpritesBuffer.Add(null);
                         continue;
@@ -197,7 +209,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         if (onFailedFile != null)
                         {
-                            onFailedFile(file, 0, 0);
+                            onFailedFile(file,AtlasFailReason.WebRequestError, 0, 0);
                         }
                         this.generatedSpritesBuffer.Add(null);
                         continue;
@@ -257,7 +269,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     if(onFailedFile != null)
                     {
-                        onFailedFile(file, 0, 0);
+                        onFailedFile(file, AtlasFailReason.FileLoadError, 0, 0);
                     }
                     this.generatedSpritesBuffer.Add(null);
                     continue;
@@ -319,7 +331,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     if (onFailedFile != null)
                     {
-                        onFailedFile(file, 0, 0);
+                        onFailedFile(file, AtlasFailReason.FileLoadError, 0, 0);
                     }
                     this.generatedSpritesBuffer.Add(null);
                     continue;
@@ -405,7 +417,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         {
                             if (onFailedFile != null)
                             {
-                                onFailedFile(file, 0, 0);
+                                onFailedFile(file, AtlasFailReason.FileLoadError, 0, 0);
                             }
                             this.generatedSpritesBuffer.Add(null);
                             continue;
@@ -495,7 +507,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 if (onFailedFile != null)
                 {
-                    onFailedFile(file, 0, 0);
+                    onFailedFile(file, AtlasFailReason.FileLoadError, 0, 0);
                 }
                 this.generatedSpritesBuffer.Add(null);
                 return null;
@@ -507,7 +519,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     if (onFailedFile != null)
                     {
-                        onFailedFile(file, 0, 0);
+                        onFailedFile(file, AtlasFailReason.DataFormatError ,0, 0);
                     }
                     this.generatedSpritesBuffer.Add(null);
                     return null;
@@ -517,7 +529,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     if (onFailedFile != null)
                     {
-                        onFailedFile(file, texture.width, texture.height);
+                        onFailedFile(file, AtlasFailReason.TextureFormatDifferent, texture.width, texture.height);
                     }
                     this.generatedSpritesBuffer.Add(null);
 #if DEBUG
@@ -535,7 +547,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         if (onFailedFile != null)
                         {
-                            onFailedFile(file, textureFile.width, textureFile.height);
+                            onFailedFile(file,AtlasFailReason.NoSpaceInAtlas, textureFile.width, textureFile.height);
                         }
                         this.generatedSpritesBuffer.Add(null);
                     }
