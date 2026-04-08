@@ -390,51 +390,59 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 this.fileReadBuffer.Dispose();
                 this.fileReadBuffer = new NativeArray<byte>(size, Allocator.Persistent);
             }
-            UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
+            int readSize = UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
 
             if (this.webRequest != null)
             {
                 this.webRequest.Dispose();
                 this.webRequest = null;
             }
-
-            ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
-            fileFormat.LoadHeader(this.fileReadBuffer);
-
-            // fileformat check
-            if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
+            if(size == 0)
             {
-#if DEBUG
-                Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
-#endif
                 this.currentLoadingFile = "";
                 this.state = EState.None;
                 return;
             }
-
-            if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
+            using (var binaryFileData = this.fileReadBuffer.GetSubArray(0, size))
             {
-                RemoveOldSprite();
-            }
-            using (var textureBodyData = fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer))
-            {
-                var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
-                    textureBodyData);
-                if (rect.width <= 0 || rect.height <= 0)
-                {
-                    Debug.LogError("Failed Add data " + currentLoadingFile);
-                }
-                this.compressedTexturePacker.ApplyToTexture();
-                var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
-                if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
-                {
-                    file.sprite = sprite;
-                    this.requestedFiles[currentLoadingFile] = file;
-                }
-                this.currentLoadingFile = "";
-                this.state = EState.None;
-            }
 
+                ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(binaryFileData);
+                fileFormat.LoadHeader(binaryFileData);
+
+                // fileformat check
+                if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
+                {
+#if DEBUG
+                    Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
+#endif
+                    this.currentLoadingFile = "";
+                    this.state = EState.None;
+                    return;
+                }
+
+                if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
+                {
+                    RemoveOldSprite();
+                }
+                using (var textureBodyData = fileFormat.GeImageDataWithoutMipmap(binaryFileData))
+                {
+                    var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
+                        textureBodyData);
+                    if (rect.width <= 0 || rect.height <= 0)
+                    {
+                        Debug.LogError("Failed Add data " + currentLoadingFile);
+                    }
+                    this.compressedTexturePacker.ApplyToTexture();
+                    var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
+                    if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
+                    {
+                        file.sprite = sprite;
+                        this.requestedFiles[currentLoadingFile] = file;
+                    }
+                    this.currentLoadingFile = "";
+                    this.state = EState.None;
+                }
+            }
         }
 
 #else
@@ -489,42 +497,52 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     this.state = EState.None;
                     return;
                 }
-
-                ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(this.fileReadBuffer);
-                fileFormat.LoadHeader(this.fileReadBuffer);
-
-                // fileformat check
-                if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
+                int readBytes = (int)this.readHandle.GetBytesRead();
+                if (readBytes == 0)
                 {
-#if DEBUG
-                    Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
-#endif
                     this.currentLoadingFile = "";
                     this.state = EState.None;
                     return;
                 }
+                using (var fileBinary = this.fileReadBuffer.GetSubArray(0, readBytes))
+                {
 
-                if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
-                {
-                    RemoveOldSprite();
-                }
-                using (var textureBodyData = fileFormat.GeImageDataWithoutMipmap(this.fileReadBuffer))
-                {
-                    var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
-                        textureBodyData);
-                    if (rect.width <= 0 || rect.height <= 0)
+                    ITextureFileFormat fileFormat = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+                    fileFormat.LoadHeader(fileBinary);
+
+                    // fileformat check
+                    if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
                     {
-                        Debug.LogError("Failed Add data " + currentLoadingFile);
+#if DEBUG
+                        Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
+#endif
+                        this.currentLoadingFile = "";
+                        this.state = EState.None;
+                        return;
                     }
-                    this.compressedTexturePacker.ApplyToTexture();
-                    var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
-                    if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
+
+                    if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
                     {
-                        file.sprite = sprite;
-                        this.requestedFiles[currentLoadingFile] = file;
+                        RemoveOldSprite();
                     }
-                    this.currentLoadingFile = "";
-                    this.state = EState.None;
+                    using (var textureBodyData = fileFormat.GeImageDataWithoutMipmap(fileBinary))
+                    {
+                        var rect = this.compressedTexturePacker.AppendTextureData(fileFormat.width, fileFormat.height,
+                            textureBodyData);
+                        if (rect.width <= 0 || rect.height <= 0)
+                        {
+                            Debug.LogError("Failed Add data " + currentLoadingFile);
+                        }
+                        this.compressedTexturePacker.ApplyToTexture();
+                        var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
+                        if (this.requestedFiles.TryGetValue(currentLoadingFile, out var file))
+                        {
+                            file.sprite = sprite;
+                            this.requestedFiles[currentLoadingFile] = file;
+                        }
+                        this.currentLoadingFile = "";
+                        this.state = EState.None;
+                    }
                 }
             }
             else if (readHandle.Status == ReadStatus.Failed || readHandle.Status == ReadStatus.Canceled || readHandle.Status == ReadStatus.Truncated)

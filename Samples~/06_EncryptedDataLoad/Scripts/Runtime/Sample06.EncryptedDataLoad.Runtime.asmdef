@@ -1,0 +1,16 @@
+{
+    "name": "Sample06.EncryptedDataLoad.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f23a65d594191d8459ffbc782a5ef2d3"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

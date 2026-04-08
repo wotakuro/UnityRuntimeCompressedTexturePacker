@@ -43,6 +43,9 @@ namespace UTJ.Sample
 
             foreach (var file in files)
             {
+                // GameObjectがない＝シーンが変わったので終了
+                if (!this || !this.gameObject) { return; }
+
                 if (file.EndsWith(".meta")) { continue; }
                 using (var fileBinary = await UnsafeFileReadUtility.LoadWithWebRequest(file, Unity.Collections.Allocator.Temp))
                 {

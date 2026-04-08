@@ -114,6 +114,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     this.generatedSpritesBuffer.Add(sprite);
                     continue;
                 }
+                int size = 0;
                 using (var webRequest = UnityWebRequest.Get(file))
                 {
                     var operation = webRequest.SendWebRequest();
@@ -133,7 +134,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         this.generatedSpritesBuffer.Add(null);
                         continue;
                     }
-                    int size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(webRequest);
+                    size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(webRequest);
                     if (!this.fileReadBuffer.IsCreated)
                     {
                         this.fileReadBuffer = new NativeArray<byte>((int)size, Allocator.Persistent);
@@ -145,7 +146,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     }
                     UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
                 }
-                CreateSprite(file, this.fileReadBuffer, onFailedFile);
+                CreateSprite(file, this.fileReadBuffer, size,onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
             if (this.fileReadBuffer.IsCreated)
@@ -182,6 +183,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     continue;
                 }
 
+                int size = 0;
                 using (var webRequest = UnityWebRequest.Get(file))
                 {
                     var operation = webRequest.SendWebRequest();
@@ -200,7 +202,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         this.generatedSpritesBuffer.Add(null);
                         continue;
                     }
-                    int size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(webRequest);
+                    size = UnsafeFileReadUtility.GetDataSizeFromWebRequest(webRequest);
 
                     if (!this.fileReadBuffer.IsCreated)
                     {
@@ -213,7 +215,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     }
                     UnsafeFileReadUtility.GetDataFromWebRequest(webRequest, this.fileReadBuffer);
                 }
-                CreateSprite(file, fileReadBuffer, onFailedFile);
+                CreateSprite(file, fileReadBuffer,size, onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
             if (fileReadBuffer.IsCreated)
@@ -276,7 +278,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     yield return null;
                 }
-                CreateSprite(file, fileReadBuffer, onFailedFile);
+                CreateSprite(file, fileReadBuffer,(int)readHandle.GetBytesRead(), onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
             if (fileReadBuffer.IsCreated)
@@ -338,7 +340,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     await Awaitable.NextFrameAsync();
                 }
-                CreateSprite(file, fileReadBuffer, onFailedFile);
+                CreateSprite(file, fileReadBuffer, (int)readHandle.GetBytesRead(), onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
             if (fileReadBuffer.IsCreated)
@@ -409,7 +411,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                             continue;
                         }
                         var name = Path.GetFileNameWithoutExtension(file);
-                        CreateSprite(file, buffer, onFailedFile);
+                        CreateSprite(file, buffer,(int)bytes, onFailedFile);
                     }
                     ++idx;
                 }
@@ -484,55 +486,68 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         /// <param name="file">ファイル名</param>
         /// <param name="fileDataBuffer">ファイルの中身のバッファ</param>
+        /// <param name="dataLength">実際のデータの長さ</param>
         /// <param name="onFailedFile">失敗時の呼び出し</param>
         /// <returns>作成したSpriteを返します</returns>
-        private Sprite CreateSprite(string file, NativeArray<byte> fileDataBuffer, TexturePackingError onFailedFile)
+        private Sprite CreateSprite(string file, NativeArray<byte> fileDataBuffer,int dataLength, TexturePackingError onFailedFile)
         {
-            ITextureFileFormat textureFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileDataBuffer);
-            if (!textureFile.LoadHeader(fileDataBuffer))
+            if(dataLength == 0)
             {
                 if (onFailedFile != null)
                 {
-                    onFailedFile(file, -1, -1);
+                    onFailedFile(file, 0, 0);
                 }
                 this.generatedSpritesBuffer.Add(null);
                 return null;
             }
-            // format Check
-            if (textureFile.textureFormat != this.compressedTexturePacker.textureFormat)
+            using (var fileBinary = fileDataBuffer.GetSubArray(0, dataLength))
             {
-                if (onFailedFile != null)
-                {
-                    onFailedFile(file, texture.width, texture.height);
-                }
-                this.generatedSpritesBuffer.Add(null);
-#if DEBUG
-                Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + textureFile.textureFormat );
-#endif
-                return null;
-            }
-
-            var name = Path.GetFileNameWithoutExtension(file);
-
-            using (var textureBodyData = textureFile.GeImageDataWithoutMipmap(fileDataBuffer)) 
-            {
-                var rect = compressedTexturePacker.AppendTextureData(textureFile.width, textureFile.height, textureBodyData);
-                if (rect.width <= 0 || rect.height <= 0)
+                ITextureFileFormat textureFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
+                if (!textureFile.LoadHeader(fileBinary))
                 {
                     if (onFailedFile != null)
                     {
-                        onFailedFile(file, textureFile.width, textureFile.height);
+                        onFailedFile(file, 0, 0);
                     }
                     this.generatedSpritesBuffer.Add(null);
+                    return null;
                 }
-                else
+                // format Check
+                if (textureFile.textureFormat != this.compressedTexturePacker.textureFormat)
                 {
-                    var texture2d = compressedTexturePacker.texture2D;
-                    var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
-                    sprite.name = name;
-                    this.generatedSpritesBuffer.Add(sprite);
-                    this.generatedSpriteByFile.Add(file, sprite);
-                    return sprite;
+                    if (onFailedFile != null)
+                    {
+                        onFailedFile(file, texture.width, texture.height);
+                    }
+                    this.generatedSpritesBuffer.Add(null);
+#if DEBUG
+                    Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + textureFile.textureFormat);
+#endif
+                    return null;
+                }
+
+                var name = Path.GetFileNameWithoutExtension(file);
+
+                using (var textureBodyData = textureFile.GeImageDataWithoutMipmap(fileBinary))
+                {
+                    var rect = compressedTexturePacker.AppendTextureData(textureFile.width, textureFile.height, textureBodyData);
+                    if (rect.width <= 0 || rect.height <= 0)
+                    {
+                        if (onFailedFile != null)
+                        {
+                            onFailedFile(file, textureFile.width, textureFile.height);
+                        }
+                        this.generatedSpritesBuffer.Add(null);
+                    }
+                    else
+                    {
+                        var texture2d = compressedTexturePacker.texture2D;
+                        var sprite = Sprite.Create(texture2d, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
+                        sprite.name = name;
+                        this.generatedSpritesBuffer.Add(sprite);
+                        this.generatedSpriteByFile.Add(file, sprite);
+                        return sprite;
+                    }
                 }
             }
             return null;
