@@ -184,7 +184,7 @@ private void OnCompleteLoadAndPack(IEnumerable<Sprite> sprites){
 }
 
 // ファイル読み込み失敗時の処理
-private void OnFailedLoadFile(string file, AutoAtlasBuilder.AtlasFailReason reason, int width, int height){
+private void OnFailedLoadFile(string file, AtlasFailedReason reason, int width, int height){
     Debug.LogError("Failed LoadFile " + file + "::" + reason+ "::" + width + "x" + height);
 }
 
