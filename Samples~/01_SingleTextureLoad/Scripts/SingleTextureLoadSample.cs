@@ -48,7 +48,8 @@ namespace UTJ.Sample
                 }
             }
         }
-#if UNITY_WEBGL
+
+
         /// <summary>
         /// Textureファイルをそのままロードします
         /// </summary>
@@ -57,7 +58,7 @@ namespace UTJ.Sample
             string url = System.IO.Path.Combine(Application.streamingAssetsPath, inputField.text);
 
 
-            using (var fileBinary = await UnsafeFileReadUtility.LoadWithWebRequest(url, Allocator.Temp))
+            using (var fileBinary = await UnsafeFileReadUtility.LoadAsync(url))
             {
                 var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
 
@@ -75,39 +76,6 @@ namespace UTJ.Sample
         }
 
 
-
-#else
-        /// <summary>
-        /// Textureファイルをそのままロードします
-        /// </summary>
-        public void LoadAstcTexture()
-        {
-            string path = System.IO.Path.Combine(Application.streamingAssetsPath, inputField.text);
-
-            using( var fileBinary = UnsafeFileReadUtility.LoadFileSync(path, Unity.Collections.Allocator.Temp) ){
-                if (fileBinary.IsCreated)
-                {
-                    var textureFormatFile = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary); ;
-                    
-                    var texture = textureFormatFile.LoadTexture(fileBinary);
-                    dstImage.texture = texture;
-                    if (texture)
-                    {
-                        this.AdjustImageSize();
-                    }
-                    else
-                    {
-                        Debug.LogError("Not support file " + inputField.text);
-                    }
-                }
-                else
-                {
-                    dstImage.texture = null;
-                    Debug.LogError("Not Found FIle " + path);
-                }
-            }
-        }
-#endif
 
         /// <summary>
         /// ImageオブジェクトをTextureサイズに合わせます

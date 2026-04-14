@@ -9,6 +9,7 @@ using UnityEngine.ParticleSystemJobs;
 using System.IO;
 using UnityEngine.UI;
 using UTJ.RuntimeCompressedTexturePacker.Format;
+using UnityEngine.UIElements;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -56,11 +57,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
         }
 
         /// <summary>
-        /// 
+        /// ファイルの同期読み込み
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="allocator"></param>
-        /// <returns></returns>
+        /// <param name="path">パス指定</param>
+        /// <param name="allocator">Allocator指定</param>
+        /// <returns>読み込んだデータ</returns>
         public static NativeArray<byte> LoadFileSync(string path,Allocator allocator)
         {
             var fileSize = GetFileSize(path);
@@ -88,8 +89,59 @@ namespace UTJ.RuntimeCompressedTexturePacker
             return handle.GetBytesRead();
         }
 
+        /// <summary>
+        /// ロード
+        /// </summary>
+        /// <param name="path">URLもしくはパス</param>
+        /// <returns>読み込んだファイルの中身 (Disposeしてください)</returns>
+        public static async Awaitable<NativeArray<byte>> LoadAsync(string path)
+        {
+            if(Application.platform == RuntimePlatform.WebGLPlayer || path.StartsWith("http://") || path.StartsWith("https://") )
+            {
+                return await LoadWithWebRequest(path,Allocator.Persistent);
+            }
+            return await LoadFileAsync(path);
+        }
+
+        /// <summary>
+        /// ファイルの非同期読み込み
+        /// </summary>
+        /// <param name="path">パスの指定</param>
+        /// <returns>読み込んだファイルの中身</returns>
+        public static async Awaitable< NativeArray<byte> > LoadFileAsync(string path)
+        {
+            var fileSize = GetFileSize(path);
+            if(fileSize <= 0)
+            {
+                return new NativeArray<byte>();
+            }
+            var fileBinary = new NativeArray<byte>((int)fileSize,Allocator.Persistent);
+
+            var readHandle = RequestLoad(path, fileBinary, fileSize);
+            while (readHandle.Status == ReadStatus.InProgress)
+            {
+                await Awaitable.NextFrameAsync();
+            }
+            if (readHandle.Status == ReadStatus.Complete)
+            {
+                return fileBinary;
+            }
+            return new NativeArray<byte>();
+        }
+
+        /// <summary>
+        /// WebRewuestからデータの作成
+        /// </summary>
+        /// <param name="request">WebRequest</param>
+        /// <param name="allocator">Allocator指定</param>
+        /// <returns>結果のデータ</returns>
         public static NativeArray<byte> GetDataFromWebRequest(UnityWebRequest request,Allocator allocator)
         {
+            if (request.result == UnityWebRequest.Result.ConnectionError ||
+                request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                return new NativeArray<byte>();
+            }
             var src = request.downloadHandler.nativeData;
             var data = new NativeArray<byte>(src.Length, allocator);
             NativeArray<byte>.Copy(src, data, src.Length);

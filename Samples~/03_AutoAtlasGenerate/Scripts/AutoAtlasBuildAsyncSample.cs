@@ -199,7 +199,7 @@ namespace UTJ.Sample
 
 
 
-
+        #region SPRITE_INFO_UI_GENERATION
         /// <summary>
         /// デバッグ用UIにSpriteを追加
         /// </summary>
@@ -260,7 +260,7 @@ namespace UTJ.Sample
             rectTransform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
         }
 
-
+        #endregion SPRITE_INFO_UI_GENERATION
     }
 
 }

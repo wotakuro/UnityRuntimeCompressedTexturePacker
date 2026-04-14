@@ -2,6 +2,7 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Experimental.Playables;
 using UnityEngine.UI;
 using UTJ.RuntimeCompressedTexturePacker;
 using UTJ.RuntimeCompressedTexturePacker.Format;
@@ -9,11 +10,13 @@ using UTJ.RuntimeCompressedTexturePacker.Format;
 namespace UTJ.Sample
 {
     /// <summary>
-    /// サンプルコード
+    /// 暗号化ファイルテクスチャフォーマット（独自）
     /// </summary>
     public class EncryptedTextureFileFormat : ITextureFileFormat
     {
+        // 先頭4ByteのSignature
         private const uint Signature = 0x5446594DU;
+        // XORの暗号キー
         private const uint EncryptKey = 0x20534444U;
 
         private uint textureWidth;
@@ -25,7 +28,7 @@ namespace UTJ.Sample
 
         public int height => (int)textureHeight;
 
-        public TextureFormat textureFormat => textureFormat;
+        public TextureFormat textureFormat => format;
 
         public bool IsValid => (width > 0 && height >0);
 
@@ -60,14 +63,7 @@ namespace UTJ.Sample
 
         public Texture2D LoadTexture(NativeArray<byte> fileBinary, bool isLinearColor = false, bool useMipmap = false)
         {
-            var texture2d = new Texture2D(width, height, textureFormat, false, isLinearColor);
-            using (var rawData = this.GeImageDataWithoutMipmap(fileBinary))
-            {
-                texture2d.LoadRawTextureData(rawData);
-            }
-            texture2d.Apply();
-
-            return texture2d;
+            return TextureFileFormatUtility.CreateTextureWithoutMipmap(this,fileBinary,isLinearColor);
         }
 
         /// <summary>
