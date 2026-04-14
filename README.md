@@ -88,7 +88,7 @@ You need to check if the TextureAtlas you are trying to create can be created in
 
 ### Loading a Single File
 
-#### Synchronous loading is possible outside of Web runtimes
+#### Synchronous loading ( exclude Web runtimes)
 ```csharp
 public Texture2D LoadRawTexture(){
     string path = System.IO.Path.Combine(Application.streamingAssetsPath, "test.astc");
@@ -104,7 +104,7 @@ public Texture2D LoadRawTexture(){
 }
 ```
 
-#### When including Web runtime (Asynchronous loading is required for WebRuntime)
+#### All platform (WebRuntime requires Asynchronous loading.)
 ```csharp
 public async Awaitable<Texture2D> LoadRawTexture(){
     string url = System.IO.Path.Combine(Application.streamingAssetsPath, "test.astc");
