@@ -130,7 +130,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         if (onFailedFile != null)
                         {
-                            onFailedFile(file,AtlasFailReason.WebRequestError, 0, 0);
+                            onFailedFile(file,AtlasFailedReason.WebRequestError, 0, 0);
                         }
                         this.generatedSpritesBuffer.Add(null);
                         continue;
@@ -198,7 +198,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         if (onFailedFile != null)
                         {
-                            onFailedFile(file,AtlasFailReason.WebRequestError, 0, 0);
+                            onFailedFile(file,AtlasFailedReason.WebRequestError, 0, 0);
                         }
                         this.generatedSpritesBuffer.Add(null);
                         continue;

@@ -178,7 +178,7 @@ public class LoadAndDisplayComponent : MonoBehaviour
     /// </summary>
     public async void LoadSingleTexture()
     {
-        using (var fileBinary = await UnsafeFileReadUtility.LoadFileAsync(singleTextureFile))
+        using (var fileBinary = await UnsafeFileReadUtility.LoadAsync(singleTextureFile))
         {
             var textureFormtObject = TextureFileFormatUtility.GetTextureFileFormatObject(fileBinary);
             var loadedTexture = textureFormtObject.LoadTexture(fileBinary);
