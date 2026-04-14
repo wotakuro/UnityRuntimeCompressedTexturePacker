@@ -35,6 +35,11 @@
             "displayName": "05_ReuseAtlasForFixedSizeImages",
             "description": "This sample demonstrates a feature for displaying a large number of icons in a scroll view or similar component.When loaded icon sprites do not fit into the atlas, older sprites are automatically discarded using the LRU (Least Recently Used) algorithm.",
             "path": "Samples~/05_ReuseAtlasForFixedSizeImages"
+        },
+        {
+            "displayName": "06_EncryptedDataLoad",
+            "description": "Sample code for handling custom file formats (such as encrypted files)",
+            "path": "Samples~/06_EncryptedDataLoad"
         }
     ]
 }
