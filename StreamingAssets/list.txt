@@ -1,3 +1,12 @@
+encrypted/banner_beer_4x4.astc.enc
+encrypted/banner_beer_BC7_UNORM.dds.enc
+encrypted/banner_beer_ETC2_RGBA.ktx.enc
+encrypted/banner_fruits_4x4.astc.enc
+encrypted/banner_fruits_BC7_UNORM.dds.enc
+encrypted/banner_fruits_ETC2_RGBA.ktx.enc
+encrypted/banner_lunchBox_4x4.astc.enc
+encrypted/banner_lunchBox_BC7_UNORM.dds.enc
+encrypted/banner_lunchBox_ETC2_RGBA.ktx.enc
 astc/Banner/banner_beer_4x4.astc
 astc/Banner/banner_fruits_4x4.astc
 astc/Banner/banner_lunchBox_4x4.astc
