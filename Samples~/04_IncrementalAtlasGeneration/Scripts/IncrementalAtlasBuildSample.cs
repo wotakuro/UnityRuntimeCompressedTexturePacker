@@ -2,9 +2,7 @@
 using UnityEngine.UI;
 using System.Collections.Generic;
 using UTJ.RuntimeCompressedTexturePacker;
-using System.Runtime.CompilerServices;
 using System.Collections;
-using UnityEditorInternal;
 
 
 namespace UTJ.Sample

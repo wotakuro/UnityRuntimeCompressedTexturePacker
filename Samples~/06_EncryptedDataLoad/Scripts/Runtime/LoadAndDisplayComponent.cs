@@ -192,10 +192,6 @@ public class LoadAndDisplayComponent : MonoBehaviour
     public async void CreateSprites()
     {
         // this.spritePackTargetFiles;
-        if(this.autoAtlasBuilder != null)
-        {
-            this.autoAtlasBuilder.Dispose();
-        }
         this.autoAtlasBuilder = new AutoAtlasBuilder(1024,1024,this.targetTextureFormat);
 
         var sprites = await this.autoAtlasBuilder.LoadAndPackAsync(this.spritePackTargetFiles);
@@ -203,6 +199,7 @@ public class LoadAndDisplayComponent : MonoBehaviour
         {
             this.AddSpriteToUI(sprite);
         }
+        this.scrollRect.content.sizeDelta = new Vector2(190.0f, -spritePositionY);
         this.atlasTexture.texture = this.autoAtlasBuilder.texture;
     }
 

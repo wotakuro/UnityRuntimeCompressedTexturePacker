@@ -124,7 +124,8 @@ namespace UTJ.Sample
                 WriteUint(data, 8, (uint)textureFileFormat.height);
                 WriteUint(data, 12, (uint)textureFileFormat.textureFormat);
                 NativeArray<byte>.Copy(imgData, 0, data, 16, imgData.Length);
-                EncryptData(imgData, 16,EncryptKey);
+
+                EncryptData(data, 16,EncryptKey);
             }
             return data;
         }
