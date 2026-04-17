@@ -272,7 +272,7 @@ void OnDestroy(){
 
 To support custom formats, you need to do the following two things:
  - 1. Implement a struct/class that inherits from `ITextureFileFormat`
- - 2. Add a file format detection process using the Delegate `TextureFileFormatUtility.appendFormatDetelctFuncction`
+ - 2. Add a file format detection process using the `TextureFileFormatUtility.SetAppendFormatDelagete`
 
 ```csharp
 /// 1. Implement a class that inherits from ITextureFileFormat
@@ -379,7 +379,7 @@ public class EncryptedTextureFileFormat : ITextureFileFormat{
 /// Process at initialization
 [RuntimeInitializeOnLoadMethod]
 static void RegisterFileFormats(){
-    TextureFileFormatUtility.appendFormatDetelctFuncction = GetAppTextureFileFormat;
+    TextureFileFormatUtility.SetAppendFormatDelagete(GetAppTextureFileFormat);
 }
 
 /// Looks at the contents of the file and determines the Texture type

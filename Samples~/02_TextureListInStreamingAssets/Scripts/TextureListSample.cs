@@ -72,6 +72,10 @@ namespace UTJ.Sample
         /// <returns></returns>
         private async Awaitable<string[]> GetStreamingAssetsFilesAsync()
         {
+#if UNITY_EDITOR
+            await Awaitable.NextFrameAsync();
+            return Directory.GetFiles(Application.streamingAssetsPath, "*", SearchOption.AllDirectories);
+#else
             var url = Path.Combine(Application.streamingAssetsPath, "list.txt");
             string resultTxt;
             using (var request = UnityWebRequest.Get(url))
@@ -98,6 +102,7 @@ namespace UTJ.Sample
                 result[i] = Path.Combine(Application.streamingAssetsPath, lines[i]);
             }
             return result;
+#endif
         }
 #else
 
@@ -159,9 +164,9 @@ namespace UTJ.Sample
 #endif
 
 
-        /// <summary>
-        /// サポートしているTextureFormat一覧
-        /// </summary>
+            /// <summary>
+            /// サポートしているTextureFormat一覧
+            /// </summary>
         private void SetupSupportTextureFormat()
         {
             if (!this.supportTextureInfo)

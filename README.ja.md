@@ -272,7 +272,7 @@ void OnDestroy(){
 
 独自のフォーマットに対応するには以下の二点を行う事で対応が出来ます。
  - 1.ITextureFileFormatを継承したstructを実装します
- - 2.TextureFileFormatUtility.appendFormatDetelctFuncctionというDelgateで、ファイルフォーマット判定処理を追加します
+ - 2.TextureFileFormatUtility.SetAppendFormatDelageteで、ファイルフォーマット判定処理を追加します
 
 ```
 /// 1.ITextureFileFormatを継承したstructを実装
@@ -381,7 +381,7 @@ public class EncryptedTextureFileFormat : ITextureFileFormat{
 /// 初期化時に処理
 [RuntimeInitializeOnLoadMethod]
 static void RegisterFileFormats(){
-    TextureFileFormatUtility.appendFormatDetelctFuncction = GetAppTextureFileFormat;
+    TextureFileFormatUtility.SetAppendFormatDelagete(GetAppTextureFileFormat);
 }
 
 /// ファイルの中身を見てTextuureのタイプを振り分けします

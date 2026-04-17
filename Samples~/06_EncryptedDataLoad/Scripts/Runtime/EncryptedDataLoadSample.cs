@@ -1,6 +1,5 @@
 ﻿using Unity.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 using UTJ.RuntimeCompressedTexturePacker;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 
@@ -15,10 +14,13 @@ namespace UTJ.Sample
         /// <summary>
         /// 起動時に、Delegate処理を登録します
         /// </summary>
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+#endif
         [RuntimeInitializeOnLoadMethod]
         static void RegisterFileFormats()
         {
-            TextureFileFormatUtility.appendFormatDetelctFuncction = GetAppTextureFileFormat;
+            TextureFileFormatUtility.SetAppendFormatDelagete( GetAppTextureFileFormat );
         }
 
         /// <summary>

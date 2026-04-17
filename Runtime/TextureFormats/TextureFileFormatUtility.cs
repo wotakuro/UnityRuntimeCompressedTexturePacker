@@ -1,6 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
+using static UTJ.RuntimeCompressedTexturePacker.Format.TextureFileFormatUtility;
 
 namespace UTJ.RuntimeCompressedTexturePacker.Format
 {
@@ -17,9 +19,9 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
         public delegate ITextureFileFormat AppendFormatDetelctFuncction(NativeArray<byte> fileBinary);
 
         /// <summary>
-        /// 独自のFileFormatを追加する必要がある場合は設定してください
+        /// 実際のDelegate部分
         /// </summary>
-        public static AppendFormatDetelctFuncction appendFormatDetelctFuncction;
+        private static AppendFormatDetelctFuncction appendFormatDetelctFuncction;
 
         /// <summary>
         /// Binaryデータから、ファイルフォーマットを判定して返します
@@ -49,6 +51,13 @@ namespace UTJ.RuntimeCompressedTexturePacker.Format
                 return new DdsTextureFile();
             }
             return new NullTextureFile();
+        }
+        /// <summary>
+        /// 独自のFileFormatを追加する必要がある場合は設定してください
+        /// </summary>
+        public static void SetAppendFormatDelagete(AppendFormatDetelctFuncction func)
+        {
+            appendFormatDetelctFuncction = func;
         }
 
         /// <summary>
