@@ -30,7 +30,7 @@ namespace UTJ.Sample
         /// <summary>
         /// ASTC / KTX / DDS ファイルを指定して、暗号化ファイルの作成
         /// </summary>
-        [MenuItem("Tools/RuntimeCompressedTexturePacker/GenerateEncryptTexture/SelectTargetFile")]
+        [MenuItem("Samples/RuntimeCompressedTexturePacker/GenerateEncryptTexture/SelectTargetFile")]
         public static void SelectTargetFile()
         {
             var srcFile = EditorUtility.OpenFilePanel("Select TextureFile", "", "astc,ktx,dds");
@@ -48,7 +48,7 @@ namespace UTJ.Sample
         /// <summary>
         /// ASTC / KTX / DDS ファイルを指定して、暗号化ファイルの作成
         /// </summary>
-        [MenuItem("Tools/RuntimeCompressedTexturePacker/GenerateEncryptTexture/SelectDirectory")]
+        [MenuItem("Samples/RuntimeCompressedTexturePacker/GenerateEncryptTexture/SelectDirectory")]
         public static void SelectTargetDirectory()
         {
             var srcDirectory = EditorUtility.OpenFolderPanel("Select Target Direcotyr","","");

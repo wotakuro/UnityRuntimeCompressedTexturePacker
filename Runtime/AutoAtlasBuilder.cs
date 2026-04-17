@@ -368,7 +368,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public List<Sprite> LoadAndPack(IEnumerable<string> files, LoadingComplete onComplete = null,
             TexturePackingError onFailedFile = null)
         {
-#if UNITY_WEBGL 
+#if UNITY_WEBGL && !UNITY_EDITOR
             throw new NotImplementedException("Web runtimes do not support synchronous file access.");
 #endif
             InitBeforeLoadStart(files,false);
@@ -425,6 +425,21 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             return this.generatedSpritesBuffer;
         }
+
+        #if UNITY_EDITOR
+        /// <summary>
+        /// [Editor Only]TextureをDestroyImmediateする
+        /// </summary>
+        public void DestroyTextureImmediate()
+        {
+
+            if (this.compressedTexturePacker != null)
+            {
+                compressedTexturePacker.DestroyTextureImmediate();
+            }
+        }
+        #endif
+
         /// <summary>
         /// Dispose処理
         /// </summary>

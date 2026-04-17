@@ -8,7 +8,7 @@ using UTJ.RuntimeCompressedTexturePacker.Format;
 namespace UTJ.Sample
 {
     /// <summary>
-    /// Astcファイルを直接読み込むサンプル。
+    /// Astc,dds,ktx等のファイルを直接読み込むサンプル。
     /// 
     /// ASTCの作成例
     /// https://github.com/ARM-software/astc-encoder

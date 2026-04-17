@@ -16,12 +16,17 @@ namespace UTJ.Sample
     /// </summary>
     public class TextureListSampleEditor : EditorWindow
     {
-        [MenuItem("Tools/RuntimeCompressedTexturePacker/TextureListSampleEditor")]
-        public static void ShowWindow()
+        /// <summary>
+        /// Window作成
+        /// </summary>
+        [MenuItem("Samples/RuntimeCompressedTexturePacker/TextureListSampleEditor")]
+        public static void Create()
         {
             TextureListSampleEditor wnd = GetWindow<TextureListSampleEditor>();
         }
-
+        /// <summary>
+        /// Enable時
+        /// </summary>
         private void OnEnable()
         {
             // ScrollView to container the images
@@ -64,9 +69,18 @@ namespace UTJ.Sample
                 }
 
             }
+            // プレイステートが変わったら閉じる
+            EditorApplication.playModeStateChanged += (state) =>
+            {
+                this.Close();
+            };
         }
 
-
+        /// <summary>
+        /// VisualElementの作成
+        /// </summary>
+        /// <param name="texture">テクスチャ</param>
+        /// <returns>作成したVisualElement</returns>
         private VisualElement CreateImage(Texture2D texture)
         {
             VisualElement visualElement = new VisualElement();

@@ -27,7 +27,7 @@ namespace UTJ.Sample
         /// <summary>
         /// EditorWindowの作成
         /// </summary>
-        [MenuItem("Tools/RuntimeCompressedTexturePacker/ReuseAtlasUITKEditorSample")]
+        [MenuItem("Samples/RuntimeCompressedTexturePacker/ReuseAtlasUITKEditorSample")]
         public static void Create()
         {
             ReuseAtlasUITKEditorSample.GetWindow<ReuseAtlasUITKEditorSample>();
