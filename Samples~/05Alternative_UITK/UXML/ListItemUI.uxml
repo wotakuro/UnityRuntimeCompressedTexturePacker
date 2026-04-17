@@ -1,0 +1,11 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="VisualElement" picking-mode="Ignore" style="flex-grow: 1; flex-direction: row;">
+        <ui:VisualElement name="VisualElement" picking-mode="Ignore" style="flex-grow: 1; margin-top: 10px; margin-left: 10px; background-position-x: left 0; background-position-y: top 0; width: 250px; max-width: 250px; min-width: 250px;">
+            <ui:ListView item-template="project://database/Assets/RuntimeCompressedTexturePacker/Samples/05Alternative_UITK/UXML/ItemUI.uxml?fileID=9197481963319205126&amp;guid=8a4abeed363059d4b9abac305bcd842c&amp;type=3#ItemUI" fixed-item-height="120" name="ItemList" binding-source-selection-mode="AutoAssign"/>
+        </ui:VisualElement>
+        <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1; margin-top: 10px; margin-left: 5px;">
+            <ui:Label text="AtlasTexture" name="AtlasTextureInfo" picking-mode="Ignore"/>
+            <ui:Image name="Image" scale-mode="ScaleToFit" source="" language-direction="Inherit" picking-mode="Position" style="flex-direction: column; display: flex; visibility: visible; overflow: visible; aspect-ratio: 1; -unity-background-image-tint-color: rgb(0, 0, 0); background-color: rgb(0, 0, 0); margin-top: 5px; margin-right: 5px; margin-bottom: 5px; margin-left: 5px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

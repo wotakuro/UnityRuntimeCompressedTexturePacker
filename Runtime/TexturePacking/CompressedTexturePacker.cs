@@ -176,6 +176,21 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
         }
 
+        #if UNITY_EDITOR
+        /// <summary>
+        /// [Editor Only]TextureをDestroyImmediateする
+        /// </summary>
+        public void DestroyTextureImmediate()
+        {
+
+            if (texture2D)
+            {
+                UnityEngine.Object.DestroyImmediate(texture2D);
+            }
+            texture2D = null;
+        }
+        #endif
+
         /// <summary>
         /// Dispose処理
         /// </summary>

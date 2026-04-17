@@ -24,7 +24,7 @@ namespace UTJ.Sample
         [SerializeField]
         private Text textureFormatInfo;
 
-        // 固定サイズの画像をAtlasを再利用しながら読み込むオブジェうkと
+        // 固定サイズの画像をAtlasを再利用しながら読み込むオブジェクト
         private RecycleAtlasForFixedSizeImages recycleAtlasForFixed;
 
         // アイコン表示しているアイテムオブジェクト（再利用するバッファ）

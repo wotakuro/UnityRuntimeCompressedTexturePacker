@@ -1,0 +1,20 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="ItemRoot" style="flex-grow: 1; align-self: auto; flex-direction: row; height: 120px; rotate: 0; background-color: rgb(255, 255, 255); background-size: 100% 120px;">
+        <ui:Image name="Image" source="" style="height: 80px; width: 80px; color: rgb(43, 43, 43); background-color: rgba(0, 0, 0, 0.43);">
+            <Bindings>
+                <ui:DataBinding property="style.backgroundImage" data-source-path="itemIconSprite" data-source-type="UTJ.Sample.IconItemData, Assembly-CSharp" binding-mode="ToTarget"/>
+            </Bindings>
+        </ui:Image>
+        <ui:Image name="loading" source="" style="height: 80px; width: 80px; flex-shrink: 0; position: absolute; rotate: 0;">
+            <Bindings>
+                <ui:DataBinding property="style.backgroundImage" data-source-path="loadingSprite" data-source-type="UTJ.Sample.IconItemData, Assembly-CSharp" binding-mode="ToTarget"/>
+                <ui:DataBinding property="style.rotate" data-source-path="loadingRotate" data-source-type="UTJ.Sample.IconItemData, Assembly-CSharp" binding-mode="ToTarget"/>
+            </Bindings>
+        </ui:Image>
+        <ui:Label text="Label" style="position: absolute; top: 0; left: 85px; height: 80px; align-items: auto; align-self: auto; justify-content: flex-start; -unity-text-align: middle-left; color: rgb(0, 0, 0); -unity-font-style: bold; font-size: 12px;">
+            <Bindings>
+                <ui:DataBinding property="text" data-source-path="itemName" data-source-type="UTJ.Sample.IconItemData, Assembly-CSharp" binding-mode="ToTarget"/>
+            </Bindings>
+        </ui:Label>
+    </ui:VisualElement>
+</ui:UXML>
