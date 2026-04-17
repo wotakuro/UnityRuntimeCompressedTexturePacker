@@ -21,6 +21,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
         // Texture size
         private int textureWidth;
         private int textureHeight;
+        // Linearテクスチャかどうか
+        private bool isLinearTexture;
 
 
         // texture実データのバッファー
@@ -121,8 +123,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// </summary>
         public void ApplyToTexture()
         {
-            texture2D.LoadRawTextureData(this.textureLowData);
-            texture2D.Apply();
+            if (texture2D)
+            {
+                texture2D.LoadRawTextureData(this.textureLowData);
+                texture2D.Apply();
+            }
         }
 
         /// <summary>
@@ -177,6 +182,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
         }
 
         #if UNITY_EDITOR
+
+
         /// <summary>
         /// [Editor Only]TextureをDestroyImmediateする
         /// </summary>
@@ -231,7 +238,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
             this.rectResolveAlgorithm = resolveAlgorithm;
             this.rectResolveAlgorithm.Initialize(width, height);
-            this.texture2D = new Texture2D(this.textureWidth, this.textureHeight, this.textureFormat, false, isLinearColor);
+            this.isLinearTexture = isLinearColor;
+            this.texture2D = new Texture2D(this.textureWidth, this.textureHeight, this.textureFormat, false, this.isLinearTexture);
             this.marginPixel = margin;
         }
 

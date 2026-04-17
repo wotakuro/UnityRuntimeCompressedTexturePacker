@@ -21,7 +21,8 @@ namespace UTJ.Sample
 
         // Atlas画像表示用
         private Image image;
-
+        // ListView 
+        ListView listView;
 
         /// <summary>
         /// EditorWindowの作成
@@ -58,8 +59,8 @@ namespace UTJ.Sample
                 var itemData = new IconItemData(recycleAtlasForFixed, iconDataPath, loadingIconPath);
                 this.itemDatas.Add(itemData);
             }
-
-            var listView = root.Q<ListView>("ItemList");
+            // UI Setup
+            this.listView = root.Q<ListView>("ItemList");
             var atlasInfo = root.Q<Label>("AtlasTextureInfo");
             if (atlasInfo != null)
             {
@@ -68,17 +69,52 @@ namespace UTJ.Sample
             this.image = root.Q<Image>();
 
             // listViewのイベント登録
-            listView.bindItem += (item, idx) =>
+            this.listView.bindItem += (item, idx) =>
             {
                 this.itemDatas[idx].OnBind();
             };
-            listView.unbindItem += (item, idx) =>
+            this.listView.unbindItem += (item, idx) =>
             {
                 this.itemDatas[idx].OnUnbind();
             };
 
             // listViewにBinding
-            listView.itemsSource = this.itemDatas;
+            this.listView.itemsSource = this.itemDatas;
+
+            EditorApplication.playModeStateChanged += this.OnPlayerStateChanged;
+        }
+
+        /// <summary>
+        /// プレイ状態が変わった時
+        /// </summary>
+        /// <param name="stateChange"></param>
+        private void OnPlayerStateChanged(PlayModeStateChange stateChange)
+        {
+            // Player->Editor時にSpriteやTextureが勝手に破棄されるので対応が必要
+            if(stateChange == PlayModeStateChange.EnteredEditMode)
+            {
+                this.itemDatas.Clear();
+
+                // アイテムセットアップ
+                string loadingIconPath;
+                string[] iconDataPaths;
+                TextureFormat textureFormat;
+                IconPathUtility.GetLoadTextureInfo(out iconDataPaths, out loadingIconPath, out textureFormat);
+
+                //  固定サイズの画像をAtlasを再利用しながら読み込むオブジェクトの作成
+                this.recycleAtlasForFixed = new RecycleAtlasForFixedSizeImages(1024, 1024, textureFormat, 256, 256);
+
+                // setup item
+                this.itemDatas = new List<IconItemData>(iconDataPaths.Length);
+                foreach (string iconDataPath in iconDataPaths)
+                {
+                    var itemData = new IconItemData(recycleAtlasForFixed, iconDataPath, loadingIconPath);
+                    this.itemDatas.Add(itemData);
+                }
+
+                // listViewにBinding
+                this.listView.itemsSource = this.itemDatas;
+            }
 
         }
 
@@ -93,6 +129,7 @@ namespace UTJ.Sample
                 recycleAtlasForFixed.Dispose();
                 recycleAtlasForFixed = null;
             }
+            EditorApplication.playModeStateChanged -= this.OnPlayerStateChanged;
         }
 
         /// <summary>
