@@ -111,6 +111,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// 実際のGridの高さ（テクスチャブロックサイズを考慮)
         private int actualGridHeight;
 
+        /// 強制更新フラグ
+        private bool forceUpdateFlag = false;
 
         /// <summary>
         /// Texture2D
@@ -244,6 +246,14 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
         }
 
+        /// <summary>
+        /// 強制アップデートフラグを有効
+        /// </summary>
+        public void SetForceUpdateDirty()
+        {
+            this.forceUpdateFlag = true;
+        }
+
         #if UNITY_EDITOR
         /// <summary>
         /// [Editor Only]TextureをDestroyImmediateする
@@ -287,12 +297,14 @@ namespace UTJ.RuntimeCompressedTexturePacker
 #endif
         }
 
+        /// フレームの変更時
         private void UpdateIfFrameChaged()
         {
-            if (Time.frameCount == this.prevTimeFrameCount)
+            if (Time.frameCount == this.prevTimeFrameCount && !this.forceUpdateFlag)
             {
                 return;
             }
+            this.forceUpdateFlag = false;
             this.prevTimeFrameCount = Time.frameCount;
             if(this.currentOrderValue > uint.MaxValue / 4)
             {

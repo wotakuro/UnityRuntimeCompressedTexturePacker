@@ -141,6 +141,7 @@ namespace UTJ.Sample
             // アイテムのアップデート処理（SpriteのRequest及び ロードアイコン回転処理)
             if (itemDatas != null)
             {
+                this.recycleAtlasForFixed.SetForceUpdateDirty();
                 foreach (var item in itemDatas)
                 {
                     item.OnUpdate(Time.deltaTime);

@@ -65,7 +65,7 @@ namespace UTJ.Sample
             this.loadingIconImagePath = loadingPath;
             this.itemName = System.IO.Path.GetFileNameWithoutExtension(itemPath);
 
-            this.loadingRotate = new Rotate(Angle.Degrees(0f),new Vector3(0,0,1) );
+            this.loadingRotate = new Rotate(Angle.Degrees(0f) );
         }
 
         /// <summary>
