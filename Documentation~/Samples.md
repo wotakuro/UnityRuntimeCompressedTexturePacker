@@ -64,4 +64,80 @@ You can verify similar behavior to the runtime directly within an EditorWindow.
 ![Sample03 ScreenShot](img/Sample03_ScreenShot.png) <br />
 1. Specify the texture file extension. You can choose from ASTC, KTX, or DDS.<br/>
 2. Starts loading files with the specified extension.<br/>
-3. A list of Sprites created by
+3. A list of Sprites created by loading from the files.<br/>
+4. The Atlas texture where the Sprites are packed.<br/>
+</details>
+
+## 04_IncrementalAtlasGeneration
+
+### Runtime
+This sample performs the same process as "03_AutoAtlasGenerate". The difference is that it generates the atlas incrementally, allowing you to observe the generation process.<br />
+
+![Sample04 in action](img/Sample04.gif) 
+
+
+<details>
+<summary>UI Description</summary>
+  
+![Sample04 ScreenShot](img/Sample04_ScreenShot.png) <br />
+1. Specify the texture file extension. You can choose from ASTC, KTX, or DDS.<br/>
+2. Starts loading files with the specified extension.<br/>
+3. A list of Sprites created by loading from the files.<br/>
+4. The Atlas texture where the Sprites are packed.<br/>
+</details>
+
+## 05_ReuseAtlasForFixedSizeImages
+
+### Runtime
+Demonstrates the functionality of displaying a large number of icons in a ScrollView or similar UI.
+If the loaded icon sprites do not fit into the atlas, older sprites are automatically removed using the LRU (Least Recently Used) algorithm.<br />
+
+![Sample05 in action](img/Sample05.gif) 
+
+<details>
+<summary>UI Description</summary>
+  
+![Sample05 ScreenShot](img/Sample05_ScreenShot.png) <br />
+1. A ScrollView listing icons. It loads them dynamically as you scroll.<br/>
+2. Displays the compression format of the current Atlas texture.<br/>
+3. The current Atlas texture.<br/>
+
+</details>
+
+## 05Alternative_UITK
+
+### Runtime
+This is the UI Toolkit version of the "05_ReuseAtlasForFixedSizeImages" sample.
+
+### Editor
+Call it from the menu: `Samples/RuntimeCompressedTexturePacker/ReuseAtlasUITKEditorSample`.<br />
+You can verify similar behavior to the runtime directly within an EditorWindow.
+
+
+## 06_EncryptedDataLoad
+
+### Runtime
+A sample for loading encrypted files.<br />
+
+![Sample06 in action](img/Sample06.gif)
+ 
+<details>
+<summary>UI Description</summary>
+  
+![Sample06 ScreenShot](img/Sample06_ScreenShot.png) <br />
+1. Specify the texture file type. You can choose from ASTC, KTX, or DDS.<br/>
+2. Loads multiple files and creates an Atlas texture along with Sprites.<br />
+3. Displays the generated Sprites.<br />
+4. Displays the Atlas texture used for the loaded and generated Sprites.<br />
+5. Single texture load.<br />
+6. The loaded single texture.<br />
+
+</details>
+
+
+### Editor
+Call it from the menu: `Samples/RuntimeCompressedTexturePacker/GenerateEncryptTexture/SelectTargetFile`.<br />
+Select a file to generate an encrypted version of it. The encrypted file will be generated in the same directory as the selected file.<br/>
+<br />
+Call it from the menu: `Samples/RuntimeCompressedTexturePacker/GenerateEncryptTexture/SelectDirectory`.<br />
+Select a folder to find textures within it and generate encrypted versions. The encrypted files will be generated under the selected directory.<br/>
