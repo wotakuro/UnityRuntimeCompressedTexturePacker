@@ -80,7 +80,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         private List<string> keyBuffer = new List<string>();
         // 一個前に実行したときのTime.frameCount
         private int prevTimeFrameCount = 0;
-#if UNITY_WEBGL
+#if WEB_RUNTIME_BUILD
         // WebRequest
         private UnityWebRequest webRequest;
 
@@ -177,7 +177,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 UpdateIfFrameChaged();
                 return requestFile.sprite;
             }
-#if UNITY_WEBGL
+#if WEB_RUNTIME_BUILD
             requestFile = new RequestFile()
             {
                 file = path,
@@ -198,7 +198,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             };
             if (requestFile.fileSize <= 0)
             {
-                Debug.LogWarning("FileSize zero " + path);
+                Debug.LogError("FileSize zero " + path);
                 return null;
             }
 #endif
@@ -284,7 +284,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             {
                 this.compressedTexturePacker.Dispose();
             }
-#if UNITY_WEBGL
+#if WEB_RUNTIME_BUILD
             if(this.webRequest != null)
             {
                 this.webRequest.Dispose();
@@ -321,7 +321,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     break;
             }
         }
-#if UNITY_WEBGL
+#if WEB_RUNTIME_BUILD
         /// <summary>
         /// Queueにあるものから、ロードをリクエストします
         /// </summary>
@@ -389,6 +389,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
             if (this.webRequest.result == UnityWebRequest.Result.ConnectionError ||
                 this.webRequest.result == UnityWebRequest.Result.ProtocolError)
             {
+#if DEBUG
+                Debug.LogError("webRequest error " + this.webRequest.result + "::" + this.currentLoadingFile);
+#endif
                 this.state = EState.None;
 
                 if (this.webRequest != null)
@@ -396,6 +399,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     this.webRequest.Dispose();
                     this.webRequest = null;
                 }
+                this.currentLoadingFile = "";
                 return;
             }
             if (!this.requestedFiles.ContainsKey(this.currentLoadingFile))
@@ -422,8 +426,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 this.webRequest.Dispose();
                 this.webRequest = null;
             }
-            if(size == 0)
+            if (size == 0)
             {
+#if DEBUG
+                Debug.LogError("webRequest size 0 " + this.currentLoadingFile);
+#endif
                 this.currentLoadingFile = "";
                 this.state = EState.None;
                 return;
@@ -438,7 +445,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
                 {
 #if DEBUG
-                    Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
+                    Debug.LogError("TextureFormat error " + this.currentLoadingFile + "::" + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
 #endif
                     this.currentLoadingFile = "";
                     this.state = EState.None;
@@ -455,7 +462,13 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         textureBodyData);
                     if (rect.width <= 0 || rect.height <= 0)
                     {
-                        Debug.LogError("Failed Add data " + currentLoadingFile);
+#if DEBUG
+                        Debug.LogError("Failed Add data " + currentLoadingFile + " " + fileFormat.width+"x"+fileFormat.height + 
+                            "  "+this.actualGridWidth+"x"+this.actualGridHeight);
+#endif
+                        this.currentLoadingFile = "";
+                        this.state = EState.None;
+                        return;
                     }
                     this.compressedTexturePacker.ApplyToTexture();
                     var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
@@ -525,6 +538,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 int readBytes = (int)this.readHandle.GetBytesRead();
                 if (readBytes == 0)
                 {
+#if DEBUG
+                    Debug.LogError("Could not load file "  + currentLoadingFile);
+#endif
                     this.currentLoadingFile = "";
                     this.state = EState.None;
                     return;
@@ -539,7 +555,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     if (fileFormat.textureFormat != this.compressedTexturePacker.textureFormat)
                     {
 #if DEBUG
-                        Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
+                        Debug.LogError("TextureFormat error " +currentLoadingFile + "::"+ this.compressedTexturePacker.textureFormat + "<-" + fileFormat.textureFormat);
 #endif
                         this.currentLoadingFile = "";
                         this.state = EState.None;
@@ -556,7 +572,13 @@ namespace UTJ.RuntimeCompressedTexturePacker
                             textureBodyData);
                         if (rect.width <= 0 || rect.height <= 0)
                         {
-                            Debug.LogError("Failed Add data " + currentLoadingFile);
+#if DEBUG
+                            Debug.LogError("Failed Add data " + currentLoadingFile + " " + fileFormat.width+"x"+fileFormat.height + 
+                                "  "+this.actualGridWidth+"x"+this.actualGridHeight);
+#endif
+                            this.currentLoadingFile = "";
+                            this.state = EState.None;
+                            return;
                         }
                         this.compressedTexturePacker.ApplyToTexture();
                         var sprite = Sprite.Create(this.compressedTexturePacker.texture2D, rect, new Vector2(0.5f, 0.5f), 100.0f, 0, SpriteMeshType.FullRect);
@@ -738,7 +760,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
 
         public int State => (int)this.state;
 
-#if !UNITY_WEBGL
+#if !WEB_RUNTIME_BUILD
         public ReadStatus readStatus => this.readHandle.Status;
 #endif
 
