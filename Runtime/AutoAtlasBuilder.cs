@@ -11,6 +11,7 @@ using UTJ.RuntimeCompressedTexturePacker.Format;
 using System.Linq;
 using System;
 using UnityEngine.Networking;
+using System.Net;
 
 
 
@@ -93,7 +94,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
         }
 
-#if UNITY_WEBGL
+#if WEB_RUNTIME_BUILD
 
         /// <summary>
         /// 非同期ロード処理
@@ -132,6 +133,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         {
                             onFailedFile(file,AtlasFailedReason.WebRequestError, 0, 0);
                         }
+#if DEBUG
+                        Debug.LogError("WebRequestEror " + webRequest.result+"::" +file);
+#endif
                         this.generatedSpritesBuffer.Add(null);
                         continue;
                     }
@@ -200,6 +204,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         {
                             onFailedFile(file,AtlasFailedReason.WebRequestError, 0, 0);
                         }
+#if DEBUG
+                        Debug.LogError("WebRequestEror " + webRequest.result + "::" + file);
+#endif
                         this.generatedSpritesBuffer.Add(null);
                         continue;
                     }
@@ -260,6 +267,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         onFailedFile(file, AtlasFailedReason.FileLoadError, 0, 0);
                     }
+#if DEBUG
+                    Debug.LogError("FileLoadError "  + file);
+#endif
                     this.generatedSpritesBuffer.Add(null);
                     continue;
                 }
@@ -322,6 +332,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         onFailedFile(file, AtlasFailedReason.FileLoadError, 0, 0);
                     }
+#if DEBUG
+                    Debug.LogError("FileLoadError " + file);
+#endif
                     this.generatedSpritesBuffer.Add(null);
                     continue;
                 }
@@ -368,9 +381,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
         public List<Sprite> LoadAndPack(IEnumerable<string> files, LoadingComplete onComplete = null,
             TexturePackingError onFailedFile = null)
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if WEB_RUNTIME_BUILD
             throw new NotImplementedException("Web runtimes do not support synchronous file access.");
-#endif
+#else
             InitBeforeLoadStart(files,false);
             NativeArray<long> fileSizes = new NativeArray<long>( files.Count(),Allocator.Temp);
             long biggestSize = 0;
@@ -408,6 +421,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                             {
                                 onFailedFile(file, AtlasFailedReason.FileLoadError, 0, 0);
                             }
+#if DEBUG
+                            Debug.LogError("FileLoadError " + file);
+#endif
                             this.generatedSpritesBuffer.Add(null);
                             continue;
                         }
@@ -428,9 +444,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 onComplete(generatedSpritesBuffer);
             }
             return this.generatedSpritesBuffer;
+#endif
+
         }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         /// <summary>
         /// [Editor Only]TextureをDestroyImmediateする
         /// </summary>
@@ -442,7 +460,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 compressedTexturePacker.DestroyTextureImmediate();
             }
         }
-        #endif
+#endif
 
         /// <summary>
         /// Dispose処理
@@ -517,6 +535,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 {
                     onFailedFile(file, AtlasFailedReason.FileLoadError, 0, 0);
                 }
+#if DEBUG
+                Debug.LogError("File Load Error " + file);
+#endif
                 this.generatedSpritesBuffer.Add(null);
                 return null;
             }
@@ -529,6 +550,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     {
                         onFailedFile(file, AtlasFailedReason.DataFormatError ,0, 0);
                     }
+#if DEBUG
+                    Debug.LogError("LoadHeader Error " + file );
+#endif
                     this.generatedSpritesBuffer.Add(null);
                     return null;
                 }
@@ -541,7 +565,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     }
                     this.generatedSpritesBuffer.Add(null);
 #if DEBUG
-                    Debug.LogError("TextureFormat error " + this.compressedTexturePacker.textureFormat + "<-" + textureFile.textureFormat);
+                    Debug.LogError("TextureFormat error " +file+"::" + this.compressedTexturePacker.textureFormat + "<-" + textureFile.textureFormat);
 #endif
                     return null;
                 }
@@ -557,6 +581,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         {
                             onFailedFile(file,AtlasFailedReason.NoSpaceInAtlas, textureFile.width, textureFile.height);
                         }
+#if DEBUG
+                        Debug.LogError("Not Enough Space " + file + textureFile.width +"x" + textureFile.height);
+#endif
                         this.generatedSpritesBuffer.Add(null);
                     }
                     else
