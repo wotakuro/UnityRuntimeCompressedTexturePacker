@@ -414,6 +414,10 @@ namespace UTJ.RuntimeCompressedTexturePacker
                         var name = Path.GetFileNameWithoutExtension(file);
                         CreateSprite(file, buffer,(int)bytes, onFailedFile);
                     }
+                    else
+                    {
+                        this.generatedSpritesBuffer.Add(null);
+                    }
                     ++idx;
                 }
             }
