@@ -2,7 +2,7 @@
   "name": "com.utj.runtimecomptexturepacker",
   "displayName": "Runtime Compressed Texture Packer",
   "description": "Unity runtime utility that dynamically packs compressed textures  to atlases to optimize VRAM and draw calls.(currently .astc only support)",
-  "version": "1.0.0-pre.1",
+  "version": "1.0.0",
   "unity": "6000.0",
   "samples": [
     {
