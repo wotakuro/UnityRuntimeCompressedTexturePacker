@@ -6,7 +6,7 @@ A utility for the Unity runtime that dynamically generates packed atlases from c
 
 ## Supported Files
 - astc (ASTC_4x4, ASTC_5x5, ASTC_6x6, ASTC_8x8, ASTC_10x10, ASTC_12x12)
-- dds (BC1, BC5, BC7)
+- dds (BC1, BC3, BC7)
 - ktx (ETC2_RGB, ETC2_RGBA1, ETC_RGBA8, ASTC_4x4, ASTC_5x5, ASTC_6x6, ASTC_8x8, ASTC_10x10, ASTC_12x12)
 
 If you want to handle KTX2 or Basis Universal, please consider using KTX for Unity or similar tools.
