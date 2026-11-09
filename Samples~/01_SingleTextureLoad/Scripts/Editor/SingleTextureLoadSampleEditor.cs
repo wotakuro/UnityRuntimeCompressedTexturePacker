@@ -4,8 +4,6 @@ using UnityEditor;
 using UTJ.RuntimeCompressedTexturePacker;
 using UTJ.RuntimeCompressedTexturePacker.Format;
 using UnityEngine.UIElements;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
-using System.Reflection;
 
 namespace UTJ.Sample
 {
