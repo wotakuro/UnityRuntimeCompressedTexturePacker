@@ -10,7 +10,8 @@ using System.Linq;
 using UTJ.RuntimeCompressedTexturePacker.Packing;
 using Unity.IO.LowLevel.Unsafe; // not web
 using UnityEngine.Networking;
-using System.Runtime.CompilerServices; // WebOnly
+using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe; // WebOnly
 
 
 namespace UTJ.RuntimeCompressedTexturePacker
@@ -88,6 +89,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
 #else
         // ReadHandle
         private ReadHandle readHandle;
+        // ReadCommands
+        private NativeArray<ReadCommand> readCommands;
 #endif
 
         // 現在ロード中のファイル
@@ -145,7 +148,9 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.resolveAlgorithm = new GridMapPacking(actualGridWidth, actualGridHeight);
             this.compressedTexturePacker = new CompressedTexturePacker(width, height, textureFormat,
                 false, this.resolveAlgorithm, margin);
-
+#if !WEB_RUNTIME_BUILD
+            this.readCommands = new NativeArray<ReadCommand>(1, Allocator.Persistent);
+#endif
 #if RCTP_DEVMODE
             Instance = this;
 #endif
@@ -254,7 +259,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
             this.forceUpdateFlag = true;
         }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         /// <summary>
         /// [Editor Only]TextureをDestroyImmediateする
         /// </summary>
@@ -265,7 +270,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 compressedTexturePacker.DestroyTextureImmediate();
             }
         }
-        #endif
+#endif
 
         /// <summary>
         /// Dispose処理
@@ -290,6 +295,8 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 this.webRequest.Dispose();
                 this.webRequest = null;
             }
+#else
+            this.readCommands.Dispose();
 #endif
 
 #if RCTP_DEVMODE
@@ -487,7 +494,7 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <summary>
         /// Queueにあるものから、ロードをリクエストします
         /// </summary>
-        private void LoadRequestFromQueue()
+        private unsafe void LoadRequestFromQueue()
         {
             if (IsLoadWaitListIsEmpty())
             {
@@ -513,7 +520,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 this.fileReadBuffer.Dispose();
                 this.fileReadBuffer = new NativeArray<byte>(requestFile.fileSize, Allocator.Persistent);
             }
-            this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.fileReadBuffer, requestFile.fileSize);
+
+            var readCommand = new ReadCommand()
+            {
+                Size = requestFile.fileSize,
+                Buffer = this.fileReadBuffer.GetUnsafePtr(),
+                Offset = 0
+            };
+            this.readCommands[0] = readCommand;
+            this.readHandle = UnsafeFileReadUtility.RequestLoad(requestFile.file, this.readCommands);
             this.state = EState.Loading;
             if (!this.compressedTexturePacker.CanAppendTextureData(this.actualGridWidth, this.actualGridHeight))
             {

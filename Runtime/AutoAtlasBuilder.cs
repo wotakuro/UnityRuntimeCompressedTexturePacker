@@ -283,13 +283,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
                     fileReadBuffer = new NativeArray<byte>((int)fileSize, Allocator.Persistent);
                 }
 
-
-                var readHandle = UnsafeFileReadUtility.RequestLoad(file, fileReadBuffer, fileSize);
-                while (!readHandle.JobHandle.IsCompleted)
+                using (var commands = UnsafeFileReadUtility.CreateReadCommands(fileReadBuffer, fileSize))
                 {
-                    yield return null;
+                    var readHandle = UnsafeFileReadUtility.RequestLoad(file, commands);
+                    while (!readHandle.JobHandle.IsCompleted)
+                    {
+                        yield return null;
+                    }
+                    CreateSprite(file, fileReadBuffer, (int)readHandle.GetBytesRead(), onFailedFile);
                 }
-                CreateSprite(file, fileReadBuffer,(int)readHandle.GetBytesRead(), onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
             if (fileReadBuffer.IsCreated)
@@ -349,12 +351,15 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 }
 
 
-                var readHandle = UnsafeFileReadUtility.RequestLoad(file, fileReadBuffer, fileSize);
-                while (!readHandle.JobHandle.IsCompleted)
+                using (var commands = UnsafeFileReadUtility.CreateReadCommands(fileReadBuffer, fileSize))
                 {
-                    await Awaitable.NextFrameAsync();
+                    var readHandle = UnsafeFileReadUtility.RequestLoad(file, commands);
+                    while (!readHandle.JobHandle.IsCompleted)
+                    {
+                        await Awaitable.NextFrameAsync();
+                    }
+                    CreateSprite(file, fileReadBuffer, (int)readHandle.GetBytesRead(), onFailedFile);
                 }
-                CreateSprite(file, fileReadBuffer, (int)readHandle.GetBytesRead(), onFailedFile);
             }
             compressedTexturePacker.ApplyToTexture();
             if (fileReadBuffer.IsCreated)

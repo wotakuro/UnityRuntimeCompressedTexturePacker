@@ -5,11 +5,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using System;
 using UnityEngine.Networking;
-using UnityEngine.ParticleSystemJobs;
-using System.IO;
-using UnityEngine.UI;
-using UTJ.RuntimeCompressedTexturePacker.Format;
-using UnityEngine.UIElements;
 
 namespace UTJ.RuntimeCompressedTexturePacker
 {
@@ -41,19 +36,30 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// ファイルロードリクエストの発行
         /// </summary>
         /// <param name="path">パス指定</param>
+        /// <param name="commands">コマンドのNativeArray指定</param>
+        /// <returns></returns>
+        internal static unsafe ReadHandle RequestLoad(string path, NativeArray<ReadCommand> commands)
+        {
+            var handle = AsyncReadManager.Read(path, (ReadCommand*)commands.GetUnsafePtr(), 1);
+            return handle;
+        }
+
+        /// <summary>
+        /// ReadCommandのNativeArray作成
+        /// </summary>
         /// <param name="buffer">バッファ指定</param>
         /// <param name="fileSize">ファイルサイズ指定</param>
-        /// <returns></returns>
-        public static unsafe ReadHandle RequestLoad(string path, NativeArray<byte> buffer, long fileSize)
+        /// <returns>作成したNativeArray</returns>
+        internal unsafe static NativeArray<ReadCommand> CreateReadCommands(NativeArray<byte> buffer, long fileSize)
         {
-            ReadCommand readCommand = new ReadCommand()
+            NativeArray<ReadCommand> commands = new NativeArray<ReadCommand>(1,Allocator.Persistent);
+            commands[0] = new ReadCommand()
             {
                 Buffer = buffer.GetUnsafePtr(),
                 Offset = 0,
                 Size = fileSize
             };
-            var handle = AsyncReadManager.Read(path, &readCommand, 1);
-            return handle;
+            return commands;
         }
 
         /// <summary>
@@ -70,8 +76,11 @@ namespace UTJ.RuntimeCompressedTexturePacker
                 return new NativeArray<byte>();
             }
             var fileBinary = new NativeArray<byte>( (int)fileSize,allocator);
-            var handle = RequestLoad(path, fileBinary, fileSize);
-            handle.JobHandle.Complete();
+            using (var commands = CreateReadCommands(fileBinary, fileSize))
+            {
+                var handle = RequestLoad(path, commands);
+                handle.JobHandle.Complete();
+            }
             return fileBinary;
         }
 
@@ -84,9 +93,12 @@ namespace UTJ.RuntimeCompressedTexturePacker
         /// <returns>読み込んだサイズ</returns>
         public static long LoadFileSync(string path, NativeArray<byte> buffer, long fileSize)
         {
-            var handle = RequestLoad(path, buffer, fileSize);
-            handle.JobHandle.Complete();
-            return handle.GetBytesRead();
+            using (var commands = CreateReadCommands(buffer, fileSize))
+            {
+                var handle = RequestLoad(path, commands);
+                handle.JobHandle.Complete();
+                return handle.GetBytesRead();
+            }
         }
 
         /// <summary>
@@ -117,14 +129,17 @@ namespace UTJ.RuntimeCompressedTexturePacker
             }
             var fileBinary = new NativeArray<byte>((int)fileSize,Allocator.Persistent);
 
-            var readHandle = RequestLoad(path, fileBinary, fileSize);
-            while (readHandle.Status == ReadStatus.InProgress)
+            using (var commands = CreateReadCommands(fileBinary, fileSize))
             {
-                await Awaitable.NextFrameAsync();
-            }
-            if (readHandle.Status == ReadStatus.Complete)
-            {
-                return fileBinary;
+                var readHandle = RequestLoad(path, commands);
+                while (readHandle.Status == ReadStatus.InProgress)
+                {
+                    await Awaitable.NextFrameAsync();
+                }
+                if (readHandle.Status == ReadStatus.Complete)
+                {
+                    return fileBinary;
+                }
             }
             return new NativeArray<byte>();
         }
